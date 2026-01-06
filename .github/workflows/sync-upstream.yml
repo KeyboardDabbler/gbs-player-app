@@ -24,6 +24,20 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Enable SSH deploy key (push to main)
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SYNC_UPSTREAM_SSH_KEY }}
+
+      - name: Trust github.com host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Use SSH for origin pushes
+        run: |
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+
       - name: Configure git
         run: |
           git config user.name "gbs-player-bot"
