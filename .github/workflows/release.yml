@@ -76,9 +76,20 @@ jobs:
           cd build/web
           zip -r ../../gbs-player-web.zip .
 
+      - name: Create source snapshot (git archive)
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            SOURCE_ID="${{ github.ref_name }}"
+          else
+            SOURCE_ID="${GITHUB_SHA:0:12}"
+          fi
+
+          git archive --format=tar.gz --prefix="gbs-player-${SOURCE_ID}/" -o "gbs-player-source-${SOURCE_ID}.tar.gz" HEAD
+          git archive --format=zip --prefix="gbs-player-${SOURCE_ID}/" -o "gbs-player-source-${SOURCE_ID}.zip" HEAD
+
       - name: Generate checksums
         run: |
-          sha256sum *.apk *.zip 2>/dev/null | tee SHA256SUMS.txt
+          sha256sum *.apk *.zip *.tar.gz 2>/dev/null | tee SHA256SUMS.txt
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -86,4 +97,5 @@ jobs:
           files: |
             *.apk
             *.zip
+            *.tar.gz
             SHA256SUMS.txt
