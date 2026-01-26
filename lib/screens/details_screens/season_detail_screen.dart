@@ -1,7 +1,9 @@
+import 'package:fladder/screens/shared/media/special_features_row.dart';
+import 'package:fladder/util/item_base_model/item_base_model_extensions.dart';
 import 'package:flutter/material.dart';
 
-import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 
 import 'package:fladder/models/item_base_model.dart';
 import 'package:fladder/models/items/season_model.dart';
@@ -14,7 +16,6 @@ import 'package:fladder/screens/shared/media/expanding_overview.dart';
 import 'package:fladder/screens/shared/media/external_urls.dart';
 import 'package:fladder/screens/shared/media/people_row.dart';
 import 'package:fladder/screens/shared/media/person_list_.dart';
-import 'package:fladder/util/item_base_model/item_base_model_extensions.dart';
 import 'package:fladder/util/list_padding.dart';
 import 'package:fladder/util/localization_helper.dart';
 import 'package:fladder/util/people_extension.dart';
@@ -50,7 +51,7 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
         await ref.read(providerId.notifier).fetchDetails(widget.item.id);
       },
       backDrops: details?.parentImages,
-      content: (padding) => Padding(
+      content: (context, padding) => Padding(
         padding: const EdgeInsets.only(bottom: 64),
         child: details != null
             ? Column(
@@ -63,7 +64,7 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                     subTitle: details.localizedName(context),
                     onTitleClicked: () => details.parentBaseModel.navigateTo(context),
                     originalTitle: details.seriesName,
-                    productionYear: details.overview.productionYear,
+                    productionYear: details.overview.productionYear.toString(),
                     runTime: details.overview.runTime,
                     studios: details.overview.studios,
                     officialRating: details.overview.parentalRating,
@@ -165,6 +166,11 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                       people: details.overview.people.guestActors,
                       contentPadding: padding,
                     ),
+                  if (details.specialFeatures.isNotEmpty)
+                    SpecialFeaturesRow(
+                        contentPadding: padding,
+                        label: context.localized.specialFeature(details.specialFeatures.length),
+                        specialFeatures: details.specialFeatures),
                   if (details.overview.externalUrls?.isNotEmpty == true)
                     Padding(
                       padding: padding,

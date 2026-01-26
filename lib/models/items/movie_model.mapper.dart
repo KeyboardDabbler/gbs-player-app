@@ -14,6 +14,7 @@ class MovieModelMapper extends SubClassMapperBase<MovieModel> {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = MovieModelMapper._());
       ItemStreamModelMapper.ensureInitialized().addSubMapper(_instance!);
+      SpecialFeatureModelMapper.ensureInitialized();
       ItemBaseModelMapper.ensureInitialized();
       OverviewModelMapper.ensureInitialized();
       UserDataMapper.ensureInitialized();
@@ -33,6 +34,10 @@ class MovieModelMapper extends SubClassMapperBase<MovieModel> {
   static List<Chapter> _$chapters(MovieModel v) => v.chapters;
   static const Field<MovieModel, List<Chapter>> _f$chapters =
       Field('chapters', _$chapters, opt: true, def: const []);
+  static List<SpecialFeatureModel> _$specialFeatures(MovieModel v) =>
+      v.specialFeatures;
+  static const Field<MovieModel, List<SpecialFeatureModel>> _f$specialFeatures =
+      Field('specialFeatures', _$specialFeatures, opt: true, def: const []);
   static DateTime _$premiereDate(MovieModel v) => v.premiereDate;
   static const Field<MovieModel, DateTime> _f$premiereDate =
       Field('premiereDate', _$premiereDate);
@@ -44,6 +49,19 @@ class MovieModelMapper extends SubClassMapperBase<MovieModel> {
   static List<ItemBaseModel> _$related(MovieModel v) => v.related;
   static const Field<MovieModel, List<ItemBaseModel>> _f$related =
       Field('related', _$related, opt: true, def: const []);
+  static List<SeerrDashboardPosterModel> _$seerrRelated(MovieModel v) =>
+      v.seerrRelated;
+  static const Field<MovieModel, List<SeerrDashboardPosterModel>>
+      _f$seerrRelated =
+      Field('seerrRelated', _$seerrRelated, opt: true, def: const []);
+  static List<SeerrDashboardPosterModel> _$seerrRecommended(MovieModel v) =>
+      v.seerrRecommended;
+  static const Field<MovieModel, List<SeerrDashboardPosterModel>>
+      _f$seerrRecommended =
+      Field('seerrRecommended', _$seerrRecommended, opt: true, def: const []);
+  static Map<String, dynamic>? _$providerIds(MovieModel v) => v.providerIds;
+  static const Field<MovieModel, Map<String, dynamic>> _f$providerIds =
+      Field('providerIds', _$providerIds, opt: true);
   static String _$name(MovieModel v) => v.name;
   static const Field<MovieModel, String> _f$name = Field('name', _$name);
   static String _$id(MovieModel v) => v.id;
@@ -90,10 +108,14 @@ class MovieModelMapper extends SubClassMapperBase<MovieModel> {
     #originalTitle: _f$originalTitle,
     #path: _f$path,
     #chapters: _f$chapters,
+    #specialFeatures: _f$specialFeatures,
     #premiereDate: _f$premiereDate,
     #sortName: _f$sortName,
     #status: _f$status,
     #related: _f$related,
+    #seerrRelated: _f$seerrRelated,
+    #seerrRecommended: _f$seerrRecommended,
+    #providerIds: _f$providerIds,
     #name: _f$name,
     #id: _f$id,
     #overview: _f$overview,
@@ -125,10 +147,14 @@ class MovieModelMapper extends SubClassMapperBase<MovieModel> {
         originalTitle: data.dec(_f$originalTitle),
         path: data.dec(_f$path),
         chapters: data.dec(_f$chapters),
+        specialFeatures: data.dec(_f$specialFeatures),
         premiereDate: data.dec(_f$premiereDate),
         sortName: data.dec(_f$sortName),
         status: data.dec(_f$status),
         related: data.dec(_f$related),
+        seerrRelated: data.dec(_f$seerrRelated),
+        seerrRecommended: data.dec(_f$seerrRecommended),
+        providerIds: data.dec(_f$providerIds),
         name: data.dec(_f$name),
         id: data.dec(_f$id),
         overview: data.dec(_f$overview),
@@ -164,8 +190,25 @@ extension MovieModelValueCopy<$R, $Out>
 abstract class MovieModelCopyWith<$R, $In extends MovieModel, $Out>
     implements ItemStreamModelCopyWith<$R, $In, $Out> {
   ListCopyWith<$R, Chapter, ObjectCopyWith<$R, Chapter, Chapter>> get chapters;
+  ListCopyWith<
+      $R,
+      SpecialFeatureModel,
+      SpecialFeatureModelCopyWith<$R, SpecialFeatureModel,
+          SpecialFeatureModel>> get specialFeatures;
   ListCopyWith<$R, ItemBaseModel,
       ItemBaseModelCopyWith<$R, ItemBaseModel, ItemBaseModel>> get related;
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRelated;
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRecommended;
+  MapCopyWith<$R, String, dynamic, ObjectCopyWith<$R, dynamic, dynamic>>?
+      get providerIds;
   @override
   OverviewModelCopyWith<$R, OverviewModel, OverviewModel> get overview;
   @override
@@ -175,10 +218,14 @@ abstract class MovieModelCopyWith<$R, $In extends MovieModel, $Out>
       {String? originalTitle,
       String? path,
       List<Chapter>? chapters,
+      List<SpecialFeatureModel>? specialFeatures,
       DateTime? premiereDate,
       String? sortName,
       String? status,
       List<ItemBaseModel>? related,
+      List<SeerrDashboardPosterModel>? seerrRelated,
+      List<SeerrDashboardPosterModel>? seerrRecommended,
+      Map<String, dynamic>? providerIds,
       String? name,
       String? id,
       OverviewModel? overview,
@@ -209,10 +256,45 @@ class _MovieModelCopyWithImpl<$R, $Out>
       get chapters => ListCopyWith($value.chapters,
           (v, t) => ObjectCopyWith(v, $identity, t), (v) => call(chapters: v));
   @override
+  ListCopyWith<
+      $R,
+      SpecialFeatureModel,
+      SpecialFeatureModelCopyWith<$R, SpecialFeatureModel,
+          SpecialFeatureModel>> get specialFeatures => ListCopyWith(
+      $value.specialFeatures,
+      (v, t) => v.copyWith.$chain(t),
+      (v) => call(specialFeatures: v));
+  @override
   ListCopyWith<$R, ItemBaseModel,
           ItemBaseModelCopyWith<$R, ItemBaseModel, ItemBaseModel>>
       get related => ListCopyWith($value.related,
           (v, t) => v.copyWith.$chain(t), (v) => call(related: v));
+  @override
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRelated => ListCopyWith(
+      $value.seerrRelated,
+      (v, t) => ObjectCopyWith(v, $identity, t),
+      (v) => call(seerrRelated: v));
+  @override
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRecommended => ListCopyWith(
+      $value.seerrRecommended,
+      (v, t) => ObjectCopyWith(v, $identity, t),
+      (v) => call(seerrRecommended: v));
+  @override
+  MapCopyWith<$R, String, dynamic, ObjectCopyWith<$R, dynamic, dynamic>>?
+      get providerIds => $value.providerIds != null
+          ? MapCopyWith(
+              $value.providerIds!,
+              (v, t) => ObjectCopyWith(v, $identity, t),
+              (v) => call(providerIds: v))
+          : null;
   @override
   OverviewModelCopyWith<$R, OverviewModel, OverviewModel> get overview =>
       $value.overview.copyWith.$chain((v) => call(overview: v));
@@ -224,10 +306,14 @@ class _MovieModelCopyWithImpl<$R, $Out>
           {String? originalTitle,
           Object? path = $none,
           List<Chapter>? chapters,
+          List<SpecialFeatureModel>? specialFeatures,
           DateTime? premiereDate,
           String? sortName,
           String? status,
           List<ItemBaseModel>? related,
+          List<SeerrDashboardPosterModel>? seerrRelated,
+          List<SeerrDashboardPosterModel>? seerrRecommended,
+          Object? providerIds = $none,
           String? name,
           String? id,
           OverviewModel? overview,
@@ -246,10 +332,14 @@ class _MovieModelCopyWithImpl<$R, $Out>
         if (originalTitle != null) #originalTitle: originalTitle,
         if (path != $none) #path: path,
         if (chapters != null) #chapters: chapters,
+        if (specialFeatures != null) #specialFeatures: specialFeatures,
         if (premiereDate != null) #premiereDate: premiereDate,
         if (sortName != null) #sortName: sortName,
         if (status != null) #status: status,
         if (related != null) #related: related,
+        if (seerrRelated != null) #seerrRelated: seerrRelated,
+        if (seerrRecommended != null) #seerrRecommended: seerrRecommended,
+        if (providerIds != $none) #providerIds: providerIds,
         if (name != null) #name: name,
         if (id != null) #id: id,
         if (overview != null) #overview: overview,
@@ -270,10 +360,15 @@ class _MovieModelCopyWithImpl<$R, $Out>
       originalTitle: data.get(#originalTitle, or: $value.originalTitle),
       path: data.get(#path, or: $value.path),
       chapters: data.get(#chapters, or: $value.chapters),
+      specialFeatures: data.get(#specialFeatures, or: $value.specialFeatures),
       premiereDate: data.get(#premiereDate, or: $value.premiereDate),
       sortName: data.get(#sortName, or: $value.sortName),
       status: data.get(#status, or: $value.status),
       related: data.get(#related, or: $value.related),
+      seerrRelated: data.get(#seerrRelated, or: $value.seerrRelated),
+      seerrRecommended:
+          data.get(#seerrRecommended, or: $value.seerrRecommended),
+      providerIds: data.get(#providerIds, or: $value.providerIds),
       name: data.get(#name, or: $value.name),
       id: data.get(#id, or: $value.id),
       overview: data.get(#overview, or: $value.overview),
