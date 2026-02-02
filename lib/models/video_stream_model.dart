@@ -18,18 +18,21 @@ import 'package:fladder/util/localization_helper.dart';
 enum PlaybackType {
   directStream,
   offline,
-  transcode;
+  transcode,
+  tv;
 
   IconData get icon => switch (this) {
         PlaybackType.offline => IconsaxPlusLinear.cloud,
         PlaybackType.directStream => IconsaxPlusLinear.arrow_right_1,
         PlaybackType.transcode => IconsaxPlusLinear.convert,
+        PlaybackType.tv => IconsaxPlusLinear.video_horizontal,
       };
 
   String name(BuildContext context) => switch (this) {
         PlaybackType.directStream => context.localized.playbackTypeDirect,
         PlaybackType.offline => context.localized.playbackTypeOffline,
-        PlaybackType.transcode => context.localized.playbackTypeTranscode
+        PlaybackType.transcode => context.localized.playbackTypeTranscode,
+        PlaybackType.tv => context.localized.playbackTypeTV,
       };
 }
 
@@ -181,11 +184,13 @@ class VideoStream {
         directOptions['LiveStreamId'] = mediaSource.liveStreamId;
       }
 
-      final params = Uri(queryParameters: directOptions).query;
-
-      playbackUrl = '${ref.read(serverUrlProvider) ?? ""}/Videos/${mediaSource.id}/stream?$params';
+      playbackUrl = buildServerUrl(
+        ref,
+        pathSegments: ['Videos', mediaSource.id ?? '', 'stream'],
+        queryParameters: directOptions,
+      );
     } else if ((mediaSource.supportsTranscoding ?? false) && mediaSource.transcodingUrl != null) {
-      playbackUrl = "${ref.read(serverUrlProvider) ?? ""}${mediaSource.transcodingUrl ?? ""}";
+      playbackUrl = buildServerUrl(ref, relativeUrl: mediaSource.transcodingUrl);
       playType = PlaybackType.transcode;
     }
 

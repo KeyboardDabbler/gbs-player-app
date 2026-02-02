@@ -42,8 +42,9 @@ class DetailScaffold extends ConsumerStatefulWidget {
   final List<ItemAction>? Function(BuildContext context)? actions;
   final Color? backgroundColor;
   final ImagesData? backDrops;
-  final Function(EdgeInsets padding) content;
+  final Function(BuildContext context, EdgeInsets padding) content;
   final Future<void> Function()? onRefresh;
+  final bool posterFillsContent;
   const DetailScaffold({
     required this.label,
     this.item,
@@ -52,6 +53,7 @@ class DetailScaffold extends ConsumerStatefulWidget {
     required this.content,
     this.backDrops,
     this.onRefresh,
+    this.posterFillsContent = false,
     super.key,
   });
 
@@ -82,7 +84,7 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
 
   Future<void> _updateDominantColor() async {
     if (!ref.read(clientSettingsProvider.select((value) => value.deriveColorsFromItem))) return;
-    final newImage = widget.item?.getPosters?.logo;
+    final newImage = widget.item?.getPosters?.logo ?? widget.item?.getPosters?.primary ?? backgroundImage;
     if (newImage == null) return;
 
     final provider = newImage.imageProvider;
@@ -105,30 +107,37 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
     final minHeight = 450.0.clamp(0, size.height).toDouble();
     final maxHeight = size.height - 10;
     final sideBarPadding = AdaptiveLayout.of(context).sideBarWidth;
+    final schemeVariant = ref.watch(clientSettingsProvider.select((value) => value.schemeVariant));
     final newColorScheme = dominantColor != null
         ? ColorScheme.fromSeed(
             seedColor: dominantColor!,
             brightness: Theme.brightnessOf(context),
-            dynamicSchemeVariant: ref.watch(clientSettingsProvider.select((value) => value.schemeVariant)),
+            dynamicSchemeVariant: schemeVariant,
           )
         : null;
     final amoledBlack = ref.watch(clientSettingsProvider.select((value) => value.amoledBlack));
     final amoledOverwrite = amoledBlack ? Colors.black : null;
+
+    final themeData =
+        newColorScheme != null && ref.watch(clientSettingsProvider.select((value) => value.deriveColorsFromItem))
+            ? FladderTheme.theme(newColorScheme, schemeVariant).copyWith(
+                scaffoldBackgroundColor: amoledOverwrite,
+                cardColor: amoledOverwrite,
+                canvasColor: amoledOverwrite,
+                colorScheme: newColorScheme.copyWith(
+                  surface: amoledOverwrite,
+                  surfaceContainerHighest: amoledOverwrite,
+                  surfaceContainerLow: amoledOverwrite,
+                ),
+              )
+            : Theme.of(context).copyWith(
+                scaffoldBackgroundColor: amoledOverwrite,
+                cardColor: amoledOverwrite,
+                canvasColor: amoledOverwrite,
+              );
+
     return Theme(
-      data: Theme.of(context)
-          .copyWith(
-            colorScheme: newColorScheme,
-          )
-          .copyWith(
-            scaffoldBackgroundColor: amoledOverwrite,
-            cardColor: amoledOverwrite,
-            canvasColor: amoledOverwrite,
-            colorScheme: newColorScheme?.copyWith(
-              surface: amoledOverwrite,
-              surfaceContainerHighest: amoledOverwrite,
-              surfaceContainerLow: amoledOverwrite,
-            ),
-          ),
+      data: themeData,
       child: Builder(builder: (context) {
         return PullToRefresh(
           onRefresh: () async {
@@ -142,7 +151,7 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
             });
           },
           refreshOnStart: true,
-          child: Scaffold(
+          child: (context) => Scaffold(
             backgroundColor: Theme.of(context).colorScheme.surface,
             extendBodyBehindAppBar: true,
             body: Stack(
@@ -156,10 +165,10 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
                         width: size.width,
                         child: FladderImage(
                           image: backgroundImage,
-                          blurOnly: true,
+                          blurOnly: !widget.posterFillsContent,
                         ),
                       ),
-                      if (backgroundImage != null)
+                      if (backgroundImage != null && !widget.posterFillsContent)
                         Align(
                           alignment: Alignment.topCenter,
                           child: Padding(
@@ -199,13 +208,19 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [
-                              Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-                              Theme.of(context).colorScheme.surface.withValues(alpha: 0.10),
-                              Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
-                              Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
-                              Theme.of(context).colorScheme.surface,
-                            ],
+                            colors: widget.posterFillsContent
+                                ? [
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 1),
+                                  ]
+                                : [
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.10),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.35),
+                                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+                                    Theme.of(context).colorScheme.surface,
+                                  ],
                           ),
                         ),
                       ),
@@ -214,22 +229,17 @@ class _DetailScaffoldState extends ConsumerState<DetailScaffold> {
                         width: size.width,
                         color: widget.backgroundColor,
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 0,
-                          top: MediaQuery.of(context).padding.top,
-                        ),
-                        child: FocusScope(
-                          autofocus: true,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: size.height,
-                              maxWidth: size.width,
-                            ),
-                            child: widget.content(
-                              padding.copyWith(
-                                left: sideBarPadding + 25 + MediaQuery.paddingOf(context).left,
-                              ),
+                      FocusScope(
+                        autofocus: true,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: size.height,
+                            maxWidth: size.width,
+                          ),
+                          child: widget.content(
+                            context,
+                            padding.copyWith(
+                              left: sideBarPadding + 25 + MediaQuery.paddingOf(context).left,
                             ),
                           ),
                         ),

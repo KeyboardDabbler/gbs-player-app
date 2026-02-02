@@ -43,6 +43,7 @@ import 'package:fladder/util/macos_window_helpers.dart';
 import 'package:fladder/util/string_extensions.dart';
 import 'package:fladder/util/svg_utils.dart';
 import 'package:fladder/util/themes_data.dart';
+import 'package:fladder/util/window_helper.dart';
 import 'package:fladder/widgets/media_query_scaler.dart';
 
 bool get _isDesktop {
@@ -180,7 +181,10 @@ class _MainState extends ConsumerState<Main> with WindowListener, WidgetsBinding
 
     final difference = DateTime.now().difference(_lastPaused);
 
-    if (difference > timeOut && ref.read(userProvider)?.authMethod != Authentication.autoLogin) {
+    final lockMethod = ref.read(userProvider.select((value) => value?.authMethod));
+    final shouldLock = Authentication.secureOptions.contains(lockMethod);
+
+    if (difference > timeOut && shouldLock) {
       _lastPaused = DateTime.now();
 
       // Stop playback if the user was still watching a video
@@ -262,29 +266,15 @@ class _MainState extends ConsumerState<Main> with WindowListener, WidgetsBinding
     ref.read(sharedUtilityProvider).loadSettings();
 
     final clientSettings = ref.read(clientSettingsProvider);
+    final startupArguments = ref.read(argumentsStateProvider);
 
     if (_isDesktop) {
-      WindowOptions windowOptions = WindowOptions(
-        backgroundColor: Colors.transparent,
-        skipTaskbar: false,
-        titleBarStyle: TitleBarStyle.hidden,
-        title: packageInfo.appName.capitalize(),
-      );
-
       toggleMacTrafficLights(false);
-
-      windowManager.waitUntilReadyToShow(windowOptions, () async {
-        if (!kDebugMode) {
-          await windowManager.show();
-          await windowManager.focus();
-          await windowManager.setSize(Size(clientSettings.size.x, clientSettings.size.y));
-          await windowManager.center();
-        }
-        final startupArguments = ref.read(argumentsStateProvider);
-        if (startupArguments.htpcMode && !(await windowManager.isFullScreen())) {
-          await windowManager.setFullScreen(true);
-        }
-      });
+      await windowManager.setupFladderWindowChrome(
+        startupArguments,
+        clientSettings,
+        packageInfo,
+      );
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: []);
       SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -305,14 +295,27 @@ class _MainState extends ConsumerState<Main> with WindowListener, WidgetsBinding
     final language = ref.watch(clientSettingsProvider
         .select((value) => value.selectedLocale ?? WidgetsBinding.instance.platformDispatcher.locale));
     final scrollBehaviour = const MaterialScrollBehavior();
+    final isLinux = defaultTargetPlatform == TargetPlatform.linux;
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        final lightTheme = themeColor == null
+        final baseLightTheme = themeColor == null
             ? FladderTheme.theme(lightDynamic ?? FladderTheme.defaultScheme(Brightness.light), schemeVariant)
             : FladderTheme.theme(themeColor.schemeLight, schemeVariant);
-        final darkTheme = (themeColor == null
+        final baseDarkTheme = (themeColor == null
             ? FladderTheme.theme(darkDynamic ?? FladderTheme.defaultScheme(Brightness.dark), schemeVariant)
             : FladderTheme.theme(themeColor.schemeDark, schemeVariant));
+
+        // Apply Chinese font for non-Linux platforms (Windows, macOS, Android, iOS)
+        final lightTheme = isLinux
+            ? baseLightTheme
+            : FladderTheme.applyChineseFontToTheme(
+                lightTheme: baseLightTheme,
+                darkTheme: baseDarkTheme,
+              );
+        final darkTheme = isLinux
+            ? baseDarkTheme
+            : FladderTheme.applyChineseFontToDarkTheme(darkTheme: baseDarkTheme);
+
         final amoledOverwrite = amoledBlack ? Colors.black : null;
         return ThemesData(
           light: lightTheme,

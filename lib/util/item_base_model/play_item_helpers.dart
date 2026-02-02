@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -9,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:fladder/models/book_model.dart';
 import 'package:fladder/models/item_base_model.dart';
+import 'package:fladder/models/items/channel_model.dart';
 import 'package:fladder/models/items/photos_model.dart';
 import 'package:fladder/models/media_playback_model.dart';
 import 'package:fladder/models/playback/playback_model.dart';
+import 'package:fladder/models/playback/tv_playback_model.dart';
+import 'package:fladder/models/video_stream_model.dart';
 import 'package:fladder/providers/api_provider.dart';
 import 'package:fladder/providers/book_viewer_provider.dart';
 import 'package:fladder/providers/items/book_details_provider.dart';
@@ -97,12 +98,11 @@ Future<void> _playVideo(
   ref.read(mediaPlaybackProvider.notifier).update((state) => state.copyWith(state: VideoPlayerState.fullScreen));
 
   await ref.read(videoPlayerProvider.notifier).openPlayer(context);
-  if (AdaptiveLayout.of(context).isDesktop) {
+  if (AdaptiveLayout.of(context).isDesktop && defaultTargetPlatform != TargetPlatform.macOS) {
     fullScreenHelper.closeFullScreen(ref);
   }
 
   if (context.mounted) {
-    log("Finished refreshing");
     await context.refreshData();
   }
 
@@ -180,6 +180,41 @@ extension PhotoAlbumExtension on PhotoAlbumModel? {
   }
 }
 
+extension ChannelModelExtension on ChannelModel? {
+  Future<void> play(
+    BuildContext context,
+    WidgetRef ref, {
+    int? currentPage,
+    AutoDisposeStateNotifierProvider<BookDetailsProviderNotifier, BookProviderModel>? provider,
+    BuildContext? parentContext,
+  }) async {
+    if (this == null) return;
+
+    _showLoadingIndicator(context);
+
+    PlaybackModel? model = await ref.read(playbackModelHelper).createPlaybackModel(
+          context,
+          this,
+          forcedPlaybackType: PlaybackType.tv,
+          showPlaybackOptions: false,
+          startPosition: Duration.zero,
+        );
+
+    if (model is! TvPlaybackModel) {
+      return;
+    }
+
+    await _playVideo(
+      context,
+      startPosition: Duration.zero,
+      current: model.copyWith(
+        channel: this,
+      ),
+      ref: ref,
+    );
+  }
+}
+
 extension ItemBaseModelExtensions on ItemBaseModel? {
   Future<void> play(
     BuildContext context,
@@ -190,6 +225,7 @@ extension ItemBaseModelExtensions on ItemBaseModel? {
       switch (this) {
         PhotoAlbumModel album => album.play(context, ref),
         BookModel book => book.play(context, ref),
+        ChannelModel channel => channel.play(context, ref),
         _ => _default(context, this, ref, startPosition: startPosition, showPlaybackOption: showPlaybackOption),
       };
 
