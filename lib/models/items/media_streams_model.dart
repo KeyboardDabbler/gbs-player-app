@@ -201,6 +201,14 @@ class VersionStreamModel {
   final List<AudioStreamModel> audioStreams;
   final List<SubStreamModel> subStreams;
 
+  String get detailedResolutionLabel {
+    final stream = videoStreams.firstOrNull;
+    if (stream == null) return "Unknown";
+    final resolution = Resolution.fromVideoStream(stream)?.value ?? "Unknown";
+    final displayProfile = DisplayProfile.fromVideoStream(stream).value;
+    return "$resolution $displayProfile";
+  }
+
   VersionStreamModel({
     required this.name,
     required this.index,
@@ -304,6 +312,15 @@ class AudioStreamModel extends AudioAndSubStreamModel {
   String get title =>
       [name, language, codec, channelLayout].nonNulls.where((element) => element.isNotEmpty).join(' - ');
 
+  String get shortTitle {
+    final parts = [language, channelLayout].nonNulls.where((element) => element.isNotEmpty).toList();
+    if (parts.isEmpty) {
+      return displayTitle;
+    } else {
+      return parts.nonNulls.where((element) => element.isNotEmpty).join(' - ').toUpperCase();
+    }
+  }
+
   AudioStreamModel.no({
     super.name = 'Off',
     super.displayTitle = 'Off',
@@ -357,10 +374,21 @@ class SubStreamModel extends AudioAndSubStreamModel {
     }
   }
 
+  String get shortTitle {
+    final parts = [language].nonNulls.where((element) => element.isNotEmpty).toList();
+    if (parts.isEmpty) {
+      return displayTitle;
+    } else {
+      return parts.nonNulls.where((element) => element.isNotEmpty).join(' - ').toUpperCase();
+    }
+  }
+
   factory SubStreamModel.fromMediaStream(dto.MediaStream stream, Ref ref) {
-    final subStreamUrl = stream.deliveryUrl != null
-        ? "${ref.read(serverUrlProvider) ?? ""}${stream.deliveryUrl?.substring(1)}}".replaceAll(".vtt", ".srt")
-        : null;
+    final deliveryUrl = stream.deliveryUrl;
+    final deliveryUri = Uri.tryParse(deliveryUrl ?? '');
+    final relativeSrtUrl = deliveryUri?.replace(path: deliveryUri.path.replaceAll('.vtt', '.srt')).toString();
+
+    final subStreamUrl = relativeSrtUrl == null ? null : buildServerUrl(ref, relativeUrl: relativeSrtUrl);
 
     return SubStreamModel(
       name: stream.title ?? "",

@@ -89,6 +89,15 @@ List<Widget> buildClientSettingsVisual(
         ),
       ),
       SettingsListTile(
+        label: Text(context.localized.enableNewTVLayout),
+        subLabel: Text(context.localized.enableNewTVLayoutDesc),
+        onTap: () => ref.read(clientSettingsProvider.notifier).setExpandedTVLayout(!clientSettings.useTVExpandedLayout),
+        trailing: Switch(
+          value: clientSettings.useTVExpandedLayout,
+          onChanged: (value) => ref.read(clientSettingsProvider.notifier).setExpandedTVLayout(value),
+        ),
+      ),
+      SettingsListTile(
         label: Text(context.localized.enableBackgroundPostersTitle),
         subLabel: Text(context.localized.enableBackgroundPostersDesc),
         trailing: EnumBox(
@@ -118,32 +127,28 @@ List<Widget> buildClientSettingsVisual(
       ),
       SettingsListTile(
         label: Text(context.localized.settingsNextUpCutoffDays),
-        trailing: SizedBox(
-            width: 100,
-            child: IntInputField(
-              suffix: context.localized.days,
-              controller: nextUpDaysEditor,
-              onSubmitted: (value) {
-                if (value != null) {
-                  ref.read(clientSettingsProvider.notifier).update((current) => current.copyWith(
-                        nextUpDateCutoff: Duration(days: value),
-                      ));
-                }
-              },
-            )),
+        trailing: IntInputField(
+          suffix: context.localized.days(clientSettings.nextUpDateCutoff?.inDays ?? 1),
+          controller: nextUpDaysEditor,
+          onSubmitted: (value) {
+            if (value != null) {
+              ref.read(clientSettingsProvider.notifier).update((current) => current.copyWith(
+                    nextUpDateCutoff: Duration(days: value),
+                  ));
+            }
+          },
+        ),
       ),
       SettingsListTile(
         label: Text(context.localized.libraryPageSizeTitle),
         subLabel: Text(context.localized.libraryPageSizeDesc),
-        trailing: SizedBox(
-            width: 100,
-            child: IntInputField(
-              controller: libraryPageSizeController,
-              placeHolder: "500",
-              onSubmitted: (value) => ref.read(clientSettingsProvider.notifier).update(
-                    (current) => current.copyWith(libraryPageSize: value),
-                  ),
-            )),
+        trailing: IntInputField(
+          controller: libraryPageSizeController,
+          placeHolder: "500",
+          onSubmitted: (value) => ref.read(clientSettingsProvider.notifier).update(
+                (current) => current.copyWith(libraryPageSize: value),
+              ),
+        ),
       ),
       SettingsListTile(
         label: Text(AdaptiveLayout.of(context).isDesktop

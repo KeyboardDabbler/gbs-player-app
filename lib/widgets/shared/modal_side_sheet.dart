@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fladder/theme.dart';
+import 'package:fladder/util/adaptive_layout/adaptive_layout.dart';
 
 Future<void> showModalSideSheet(
   BuildContext context, {
@@ -34,7 +35,7 @@ Future<void> showModalSideSheet(
         alignment: Alignment.centerRight,
         child: Padding(
           padding: const EdgeInsets.all(16.0).copyWith(
-            top: MediaQuery.paddingOf(context).top,
+            top: MediaQuery.paddingOf(context).top + AdaptiveLayout.of(context).topBarHeight,
           ),
           child: Sheet(
             header: header,
@@ -121,15 +122,18 @@ class Sheet extends StatelessWidget {
             child: const BackButton(),
           ),
           if (header != null)
-            Material(
-              textStyle: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              color: Colors.transparent,
-              child: header!,
-            ),
-          const Spacer(),
+            Expanded(
+              child: Material(
+                textStyle: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                color: Colors.transparent,
+                child: header!,
+              ),
+            )
+          else
+            const Spacer(),
           Visibility(
             visible: closeButton,
             child: const CloseButton(),

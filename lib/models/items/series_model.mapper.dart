@@ -16,6 +16,7 @@ class SeriesModelMapper extends SubClassMapperBase<SeriesModel> {
       ItemBaseModelMapper.ensureInitialized().addSubMapper(_instance!);
       EpisodeModelMapper.ensureInitialized();
       SeasonModelMapper.ensureInitialized();
+      SpecialFeatureModelMapper.ensureInitialized();
       ItemBaseModelMapper.ensureInitialized();
       OverviewModelMapper.ensureInitialized();
       UserDataMapper.ensureInitialized();
@@ -33,6 +34,14 @@ class SeriesModelMapper extends SubClassMapperBase<SeriesModel> {
   static List<SeasonModel>? _$seasons(SeriesModel v) => v.seasons;
   static const Field<SeriesModel, List<SeasonModel>> _f$seasons =
       Field('seasons', _$seasons, opt: true);
+  static EpisodeModel? _$selectedEpisode(SeriesModel v) => v.selectedEpisode;
+  static const Field<SeriesModel, EpisodeModel> _f$selectedEpisode =
+      Field('selectedEpisode', _$selectedEpisode, opt: true);
+  static List<SpecialFeatureModel>? _$specialFeatures(SeriesModel v) =>
+      v.specialFeatures;
+  static const Field<SeriesModel, List<SpecialFeatureModel>>
+      _f$specialFeatures =
+      Field('specialFeatures', _$specialFeatures, opt: true);
   static String _$originalTitle(SeriesModel v) => v.originalTitle;
   static const Field<SeriesModel, String> _f$originalTitle =
       Field('originalTitle', _$originalTitle);
@@ -44,6 +53,19 @@ class SeriesModelMapper extends SubClassMapperBase<SeriesModel> {
   static List<ItemBaseModel> _$related(SeriesModel v) => v.related;
   static const Field<SeriesModel, List<ItemBaseModel>> _f$related =
       Field('related', _$related, opt: true, def: const []);
+  static List<SeerrDashboardPosterModel> _$seerrRelated(SeriesModel v) =>
+      v.seerrRelated;
+  static const Field<SeriesModel, List<SeerrDashboardPosterModel>>
+      _f$seerrRelated =
+      Field('seerrRelated', _$seerrRelated, opt: true, def: const []);
+  static List<SeerrDashboardPosterModel> _$seerrRecommended(SeriesModel v) =>
+      v.seerrRecommended;
+  static const Field<SeriesModel, List<SeerrDashboardPosterModel>>
+      _f$seerrRecommended =
+      Field('seerrRecommended', _$seerrRecommended, opt: true, def: const []);
+  static Map<String, dynamic>? _$providerIds(SeriesModel v) => v.providerIds;
+  static const Field<SeriesModel, Map<String, dynamic>> _f$providerIds =
+      Field('providerIds', _$providerIds, opt: true);
   static String _$name(SeriesModel v) => v.name;
   static const Field<SeriesModel, String> _f$name = Field('name', _$name);
   static String _$id(SeriesModel v) => v.id;
@@ -83,10 +105,15 @@ class SeriesModelMapper extends SubClassMapperBase<SeriesModel> {
   final MappableFields<SeriesModel> fields = const {
     #availableEpisodes: _f$availableEpisodes,
     #seasons: _f$seasons,
+    #selectedEpisode: _f$selectedEpisode,
+    #specialFeatures: _f$specialFeatures,
     #originalTitle: _f$originalTitle,
     #sortName: _f$sortName,
     #status: _f$status,
     #related: _f$related,
+    #seerrRelated: _f$seerrRelated,
+    #seerrRecommended: _f$seerrRecommended,
+    #providerIds: _f$providerIds,
     #name: _f$name,
     #id: _f$id,
     #overview: _f$overview,
@@ -115,10 +142,15 @@ class SeriesModelMapper extends SubClassMapperBase<SeriesModel> {
     return SeriesModel(
         availableEpisodes: data.dec(_f$availableEpisodes),
         seasons: data.dec(_f$seasons),
+        selectedEpisode: data.dec(_f$selectedEpisode),
+        specialFeatures: data.dec(_f$specialFeatures),
         originalTitle: data.dec(_f$originalTitle),
         sortName: data.dec(_f$sortName),
         status: data.dec(_f$status),
         related: data.dec(_f$related),
+        seerrRelated: data.dec(_f$seerrRelated),
+        seerrRecommended: data.dec(_f$seerrRecommended),
+        providerIds: data.dec(_f$providerIds),
         name: data.dec(_f$name),
         id: data.dec(_f$id),
         overview: data.dec(_f$overview),
@@ -156,8 +188,26 @@ abstract class SeriesModelCopyWith<$R, $In extends SeriesModel, $Out>
       get availableEpisodes;
   ListCopyWith<$R, SeasonModel,
       SeasonModelCopyWith<$R, SeasonModel, SeasonModel>>? get seasons;
+  EpisodeModelCopyWith<$R, EpisodeModel, EpisodeModel>? get selectedEpisode;
+  ListCopyWith<
+      $R,
+      SpecialFeatureModel,
+      SpecialFeatureModelCopyWith<$R, SpecialFeatureModel,
+          SpecialFeatureModel>>? get specialFeatures;
   ListCopyWith<$R, ItemBaseModel,
       ItemBaseModelCopyWith<$R, ItemBaseModel, ItemBaseModel>> get related;
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRelated;
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRecommended;
+  MapCopyWith<$R, String, dynamic, ObjectCopyWith<$R, dynamic, dynamic>>?
+      get providerIds;
   @override
   OverviewModelCopyWith<$R, OverviewModel, OverviewModel> get overview;
   @override
@@ -166,10 +216,15 @@ abstract class SeriesModelCopyWith<$R, $In extends SeriesModel, $Out>
   $R call(
       {List<EpisodeModel>? availableEpisodes,
       List<SeasonModel>? seasons,
+      EpisodeModel? selectedEpisode,
+      List<SpecialFeatureModel>? specialFeatures,
       String? originalTitle,
       String? sortName,
       String? status,
       List<ItemBaseModel>? related,
+      List<SeerrDashboardPosterModel>? seerrRelated,
+      List<SeerrDashboardPosterModel>? seerrRecommended,
+      Map<String, dynamic>? providerIds,
       String? name,
       String? id,
       OverviewModel? overview,
@@ -208,10 +263,49 @@ class _SeriesModelCopyWithImpl<$R, $Out>
               (v) => call(seasons: v))
           : null;
   @override
+  EpisodeModelCopyWith<$R, EpisodeModel, EpisodeModel>? get selectedEpisode =>
+      $value.selectedEpisode?.copyWith.$chain((v) => call(selectedEpisode: v));
+  @override
+  ListCopyWith<
+      $R,
+      SpecialFeatureModel,
+      SpecialFeatureModelCopyWith<$R, SpecialFeatureModel,
+          SpecialFeatureModel>>? get specialFeatures =>
+      $value.specialFeatures != null
+          ? ListCopyWith($value.specialFeatures!,
+              (v, t) => v.copyWith.$chain(t), (v) => call(specialFeatures: v))
+          : null;
+  @override
   ListCopyWith<$R, ItemBaseModel,
           ItemBaseModelCopyWith<$R, ItemBaseModel, ItemBaseModel>>
       get related => ListCopyWith($value.related,
           (v, t) => v.copyWith.$chain(t), (v) => call(related: v));
+  @override
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRelated => ListCopyWith(
+      $value.seerrRelated,
+      (v, t) => ObjectCopyWith(v, $identity, t),
+      (v) => call(seerrRelated: v));
+  @override
+  ListCopyWith<
+      $R,
+      SeerrDashboardPosterModel,
+      ObjectCopyWith<$R, SeerrDashboardPosterModel,
+          SeerrDashboardPosterModel>> get seerrRecommended => ListCopyWith(
+      $value.seerrRecommended,
+      (v, t) => ObjectCopyWith(v, $identity, t),
+      (v) => call(seerrRecommended: v));
+  @override
+  MapCopyWith<$R, String, dynamic, ObjectCopyWith<$R, dynamic, dynamic>>?
+      get providerIds => $value.providerIds != null
+          ? MapCopyWith(
+              $value.providerIds!,
+              (v, t) => ObjectCopyWith(v, $identity, t),
+              (v) => call(providerIds: v))
+          : null;
   @override
   OverviewModelCopyWith<$R, OverviewModel, OverviewModel> get overview =>
       $value.overview.copyWith.$chain((v) => call(overview: v));
@@ -222,10 +316,15 @@ class _SeriesModelCopyWithImpl<$R, $Out>
   $R call(
           {Object? availableEpisodes = $none,
           Object? seasons = $none,
+          Object? selectedEpisode = $none,
+          Object? specialFeatures = $none,
           String? originalTitle,
           String? sortName,
           String? status,
           List<ItemBaseModel>? related,
+          List<SeerrDashboardPosterModel>? seerrRelated,
+          List<SeerrDashboardPosterModel>? seerrRecommended,
+          Object? providerIds = $none,
           String? name,
           String? id,
           OverviewModel? overview,
@@ -241,10 +340,15 @@ class _SeriesModelCopyWithImpl<$R, $Out>
       $apply(FieldCopyWithData({
         if (availableEpisodes != $none) #availableEpisodes: availableEpisodes,
         if (seasons != $none) #seasons: seasons,
+        if (selectedEpisode != $none) #selectedEpisode: selectedEpisode,
+        if (specialFeatures != $none) #specialFeatures: specialFeatures,
         if (originalTitle != null) #originalTitle: originalTitle,
         if (sortName != null) #sortName: sortName,
         if (status != null) #status: status,
         if (related != null) #related: related,
+        if (seerrRelated != null) #seerrRelated: seerrRelated,
+        if (seerrRecommended != null) #seerrRecommended: seerrRecommended,
+        if (providerIds != $none) #providerIds: providerIds,
         if (name != null) #name: name,
         if (id != null) #id: id,
         if (overview != null) #overview: overview,
@@ -263,10 +367,16 @@ class _SeriesModelCopyWithImpl<$R, $Out>
       availableEpisodes:
           data.get(#availableEpisodes, or: $value.availableEpisodes),
       seasons: data.get(#seasons, or: $value.seasons),
+      selectedEpisode: data.get(#selectedEpisode, or: $value.selectedEpisode),
+      specialFeatures: data.get(#specialFeatures, or: $value.specialFeatures),
       originalTitle: data.get(#originalTitle, or: $value.originalTitle),
       sortName: data.get(#sortName, or: $value.sortName),
       status: data.get(#status, or: $value.status),
       related: data.get(#related, or: $value.related),
+      seerrRelated: data.get(#seerrRelated, or: $value.seerrRelated),
+      seerrRecommended:
+          data.get(#seerrRecommended, or: $value.seerrRecommended),
+      providerIds: data.get(#providerIds, or: $value.providerIds),
       name: data.get(#name, or: $value.name),
       id: data.get(#id, or: $value.id),
       overview: data.get(#overview, or: $value.overview),

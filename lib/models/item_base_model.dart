@@ -9,6 +9,7 @@ import 'package:fladder/jellyfin/jellyfin_open_api.enums.swagger.dart';
 import 'package:fladder/jellyfin/jellyfin_open_api.swagger.dart' as dto;
 import 'package:fladder/models/book_model.dart';
 import 'package:fladder/models/boxset_model.dart';
+import 'package:fladder/models/items/channel_model.dart';
 import 'package:fladder/models/items/episode_model.dart';
 import 'package:fladder/models/items/folder_model.dart';
 import 'package:fladder/models/items/images_models.dart';
@@ -25,6 +26,7 @@ import 'package:fladder/models/playlist_model.dart';
 import 'package:fladder/providers/api_provider.dart';
 import 'package:fladder/routes/auto_router.gr.dart';
 import 'package:fladder/screens/details_screens/book_detail_screen.dart';
+import 'package:fladder/screens/details_screens/channel_detail_screen.dart';
 import 'package:fladder/screens/details_screens/details_screens.dart';
 import 'package:fladder/screens/details_screens/episode_detail_screen.dart';
 import 'package:fladder/screens/details_screens/season_detail_screen.dart';
@@ -125,6 +127,12 @@ class ItemBaseModel with ItemBaseModelMappable {
 
   ImageData? get bannerImage => images?.primary ?? getPosters?.randomBackDrop ?? getPosters?.primary;
 
+  ImageData? get tvPosterLarge => getPosters?.backDrop?.lastOrNull ?? images?.primary ?? getPosters?.primary;
+  ImageData? get tvPosterSmall => getPosters?.primary ?? getPosters?.backDrop?.lastOrNull;
+
+  ImageData? get tvPosterLogo =>
+      getPosters?.logo ?? images?.logo ?? parentBaseModel.images?.logo ?? parentBaseModel.getPosters?.logo;
+
   bool get playAble => false;
 
   bool get syncAble => false;
@@ -164,6 +172,8 @@ class ItemBaseModel with ItemBaseModelMappable {
         return EpisodeDetailScreen(item: this);
       case SeriesModel series:
         return SeriesDetailScreen(item: series);
+      case ChannelModel channel:
+        return ChannelDetailScreen(item: channel);
       default:
         return EmptyItem(item: this);
     }
@@ -189,9 +199,11 @@ class ItemBaseModel with ItemBaseModelMappable {
           ),
         );
         break;
+      case EpisodeModel model:
+        context.router.push(DetailsRoute(id: model.parentId ?? id, item: this, tag: tag));
+        break;
       case BookModel _:
       case MovieModel _:
-      case EpisodeModel _:
       case SeriesModel _:
       case SeasonModel _:
       case PersonModel _:
@@ -217,6 +229,7 @@ class ItemBaseModel with ItemBaseModelMappable {
       BaseItemKind.boxset => BoxSetModel.fromBaseDto(item, ref),
       BaseItemKind.book => BookModel.fromBaseDto(item, ref),
       BaseItemKind.playlist => PlaylistModel.fromBaseDto(item, ref),
+      BaseItemKind.tvchannel => ChannelModel.fromBaseDto(item, ref),
       _ => ItemBaseModel._fromBaseDto(item, ref)
     };
   }
@@ -261,17 +274,6 @@ class ItemBaseModel with ItemBaseModelMappable {
         FolderModel _ => FladderItemType.folder,
         ItemBaseModel _ => FladderItemType.baseType,
       };
-
-  @override
-  bool operator ==(covariant ItemBaseModel other) {
-    if (identical(this, other)) return true;
-    return other.id == id;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^ type.hashCode;
-  }
 }
 
 // Currently supported types
@@ -343,6 +345,10 @@ enum FladderItemType {
   book(
     icon: IconsaxPlusLinear.book,
     selectedicon: IconsaxPlusBold.book,
+  ),
+  tvchannel(
+    icon: IconsaxPlusLinear.slider_horizontal,
+    selectedicon: IconsaxPlusBold.slider_horizontal,
   );
 
   const FladderItemType({required this.icon, required this.selectedicon});
@@ -354,6 +360,7 @@ enum FladderItemType {
         FladderItemType.folder => 0.8,
         FladderItemType.musicAlbum => 0.8,
         FladderItemType.baseType => 0.8,
+        FladderItemType.tvchannel => 0.8,
         _ => 0.55,
       };
 
@@ -363,6 +370,7 @@ enum FladderItemType {
         FladderItemType.season,
         FladderItemType.movie,
         FladderItemType.musicVideo,
+        FladderItemType.tvchannel,
       };
 
   static Set<FladderItemType> get galleryItem => {
@@ -370,24 +378,25 @@ enum FladderItemType {
         FladderItemType.video,
       };
 
-  String label(BuildContext context) => switch (this) {
+  String label(BuildContext context, {int count = 1}) => switch (this) {
         FladderItemType.baseType => context.localized.mediaTypeBase,
-        FladderItemType.audio => context.localized.audio,
-        FladderItemType.collectionFolder => context.localized.collectionFolder,
-        FladderItemType.musicAlbum => context.localized.musicAlbum,
-        FladderItemType.musicVideo => context.localized.video,
-        FladderItemType.video => context.localized.video,
-        FladderItemType.movie => context.localized.mediaTypeMovie,
-        FladderItemType.series => context.localized.mediaTypeSeries,
-        FladderItemType.season => context.localized.mediaTypeSeason,
-        FladderItemType.episode => context.localized.mediaTypeEpisode,
-        FladderItemType.photo => context.localized.mediaTypePhoto,
-        FladderItemType.person => context.localized.mediaTypePerson,
-        FladderItemType.photoAlbum => context.localized.mediaTypePhotoAlbum,
-        FladderItemType.folder => context.localized.mediaTypeFolder,
-        FladderItemType.boxset => context.localized.mediaTypeBoxset,
-        FladderItemType.playlist => context.localized.mediaTypePlaylist,
-        FladderItemType.book => context.localized.mediaTypeBook,
+        FladderItemType.audio => context.localized.audio(count),
+        FladderItemType.collectionFolder => context.localized.collectionFolder(count),
+        FladderItemType.musicAlbum => context.localized.musicAlbum(count),
+        FladderItemType.musicVideo => context.localized.video(count),
+        FladderItemType.video => context.localized.video(count),
+        FladderItemType.movie => context.localized.mediaTypeMovie(count),
+        FladderItemType.series => context.localized.mediaTypeSeries(count),
+        FladderItemType.season => context.localized.mediaTypeSeason(count),
+        FladderItemType.episode => context.localized.mediaTypeEpisode(count),
+        FladderItemType.photo => context.localized.mediaTypePhoto(count),
+        FladderItemType.person => context.localized.mediaTypePerson(count),
+        FladderItemType.photoAlbum => context.localized.mediaTypePhotoAlbum(count),
+        FladderItemType.folder => context.localized.mediaTypeFolder(count),
+        FladderItemType.boxset => context.localized.mediaTypeBoxset(count),
+        FladderItemType.playlist => context.localized.mediaTypePlaylist(count),
+        FladderItemType.book => context.localized.mediaTypeBook(count),
+        FladderItemType.tvchannel => context.localized.mediaTypeTV(count),
       };
 
   BaseItemKind get dtoKind => switch (this) {
@@ -408,6 +417,7 @@ enum FladderItemType {
         FladderItemType.boxset => BaseItemKind.boxset,
         FladderItemType.playlist => BaseItemKind.playlist,
         FladderItemType.book => BaseItemKind.book,
+        FladderItemType.tvchannel => BaseItemKind.tvchannel,
       };
 
   final IconData icon;

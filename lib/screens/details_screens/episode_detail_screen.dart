@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import 'package:intl/intl.dart';
 
 import 'package:fladder/models/item_base_model.dart';
 import 'package:fladder/providers/items/episode_details_provider.dart';
@@ -14,7 +15,7 @@ import 'package:fladder/screens/shared/fladder_snackbar.dart';
 import 'package:fladder/screens/shared/media/chapter_row.dart';
 import 'package:fladder/screens/shared/media/components/media_play_button.dart';
 import 'package:fladder/screens/shared/media/episode_posters.dart';
-import 'package:fladder/screens/shared/media/expanding_overview.dart';
+import 'package:fladder/screens/shared/media/expanding_text.dart';
 import 'package:fladder/screens/shared/media/external_urls.dart';
 import 'package:fladder/screens/shared/media/people_row.dart';
 import 'package:fladder/util/adaptive_layout/adaptive_layout.dart';
@@ -69,7 +70,7 @@ class _ItemDetailScreenState extends ConsumerState<EpisodeDetailScreen> {
       ),
       onRefresh: () async => await ref.read(providerInstance.notifier).fetchDetails(widget.item),
       backDrops: details.episode?.images ?? details.series?.images,
-      content: (padding) => seasonDetails != null && episodeDetails != null
+      content: (context, padding) => seasonDetails != null && episodeDetails != null
           ? Padding(
               padding: const EdgeInsets.only(bottom: 64),
               child: Column(
@@ -79,7 +80,7 @@ class _ItemDetailScreenState extends ConsumerState<EpisodeDetailScreen> {
                   OverviewHeader(
                     name: details.series?.name ?? "",
                     image: seasonDetails.images,
-                    playButton: episodeDetails.playAble
+                    mainButton: episodeDetails.playAble
                         ? MediaPlayButton(
                             item: episodeDetails,
                             onPressed: (restart) async {
@@ -148,31 +149,28 @@ class _ItemDetailScreenState extends ConsumerState<EpisodeDetailScreen> {
                     subTitle: details.episode?.detailedName(context),
                     originalTitle: details.series?.originalTitle,
                     onTitleClicked: () => details.series?.navigateTo(context),
-                    productionYear: details.series?.overview.productionYear,
+                    productionYear: details.episode?.dateAired != null
+                        ? DateFormat.yMMMEd().format(details.episode!.dateAired!)
+                        : null,
                     runTime: details.episode?.overview.runTime,
                     studios: details.series?.overview.studios ?? [],
                     genres: details.series?.overview.genreItems ?? [],
                     officialRating: details.series?.overview.parentalRating,
                     communityRating: details.series?.overview.communityRating,
+                    mediaStreamHelper: details.episode?.mediaStreams != null
+                        ? MediaStreamHelper(
+                            mediaStream: details.episode!.mediaStreams,
+                            onItemChanged: (changed) {
+                              final updateEpisode = details.episode!.copyWith(
+                                mediaStreams: changed,
+                              );
+                              ref.read(providerInstance.notifier).updateEpisode(updateEpisode);
+                            },
+                          )
+                        : null,
                   ),
-                  if (details.episode?.mediaStreams != null)
-                    Padding(
-                      padding: padding,
-                      child: MediaStreamInformation(
-                        mediaStream: details.episode!.mediaStreams,
-                        onVersionIndexChanged: (index) {
-                          ref.read(providerInstance.notifier).setVersionIndex(index);
-                        },
-                        onSubIndexChanged: (index) {
-                          ref.read(providerInstance.notifier).setSubIndex(index);
-                        },
-                        onAudioIndexChanged: (index) {
-                          ref.read(providerInstance.notifier).setAudioIndex(index);
-                        },
-                      ),
-                    ),
                   if (episodeDetails.overview.summary.isNotEmpty == true)
-                    ExpandingOverview(
+                    ExpandingText(
                       text: episodeDetails.overview.summary,
                     ).padding(padding),
                   if (episodeDetails.chapters.isNotEmpty)

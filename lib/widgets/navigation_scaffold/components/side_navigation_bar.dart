@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 
 import 'package:fladder/models/collection_types.dart';
-import 'package:fladder/models/library_filter_model.dart';
 import 'package:fladder/providers/settings/client_settings_provider.dart';
 import 'package:fladder/providers/views_provider.dart';
 import 'package:fladder/routes/auto_router.dart';
@@ -29,13 +28,13 @@ import 'package:fladder/widgets/shared/simple_overflow_widget.dart';
 
 final navBarNode = FocusNode();
 
-class SideNavigationBar extends ConsumerStatefulWidget {
+class SideNavigationRail extends ConsumerStatefulWidget {
   final int currentIndex;
   final List<DestinationModel> destinations;
   final String currentLocation;
   final Widget child;
   final GlobalKey<ScaffoldState> scaffoldKey;
-  const SideNavigationBar({
+  const SideNavigationRail({
     required this.currentIndex,
     required this.destinations,
     required this.currentLocation,
@@ -45,10 +44,10 @@ class SideNavigationBar extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _SideNavigationBarState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _SideNavigationRail();
 }
 
-class _SideNavigationBarState extends ConsumerState<SideNavigationBar> {
+class _SideNavigationRail extends ConsumerState<SideNavigationRail> {
   bool expandedSideBar = false;
 
   @override
@@ -204,11 +203,7 @@ class _SideNavigationBarState extends ConsumerState<SideNavigationBar> {
                                             selected,
                                             true,
                                             shouldExpand,
-                                            () => context.pushRoute(
-                                              LibrarySearchRoute(
-                                                viewModelId: view.id,
-                                              ).withFilter(view.collectionType.defaultFilters),
-                                            ),
+                                            () => view.navigateToView(context),
                                             onLongPress: () => showBottomSheetPill(
                                               context: context,
                                               content: (context, scrollController) => ListView(
@@ -231,7 +226,6 @@ class _SideNavigationBarState extends ConsumerState<SideNavigationBar> {
                                                                 : view.collectionType.iconOutlined,
                                                           ),
                                                         ),
-                                                        decodeHeight: 64,
                                                       ),
                                                     ),
                                                   )
@@ -282,9 +276,7 @@ class _SideNavigationBarState extends ConsumerState<SideNavigationBar> {
                                             .sublist(views.length - remainingCount)
                                             .map(
                                               (e) => PopupMenuItem(
-                                                onTap: () => context.pushRoute(LibrarySearchRoute(
-                                                  viewModelId: e.id,
-                                                ).withFilter(e.collectionType.defaultFilters)),
+                                                onTap: () => e.navigateToView(context),
                                                 child: Row(
                                                   spacing: 8,
                                                   children: [
@@ -302,7 +294,6 @@ class _SideNavigationBarState extends ConsumerState<SideNavigationBar> {
                                                                       e.collectionType.iconOutlined,
                                                                     ),
                                                                   ),
-                                                                  decodeHeight: 64,
                                                                 ),
                                                               ),
                                                             ),
