@@ -10,11 +10,13 @@ class MediaHeader extends ConsumerWidget {
   final ImageData? logo;
   final Function()? onTap;
   final Alignment alignment;
+  final TextAlign textAlign;
   const MediaHeader({
     required this.name,
     required this.logo,
     this.onTap,
     this.alignment = Alignment.bottomCenter,
+    this.textAlign = TextAlign.center,
     super.key,
   });
 
@@ -22,49 +24,41 @@ class MediaHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final maxSize = 700.0;
     final textWidget = Container(
-      height: 512,
-      alignment: Alignment.center,
+      constraints: const BoxConstraints(minHeight: 10, maxHeight: 200),
+      alignment: alignment,
       child: SelectableText(
         name,
-        textAlign: TextAlign.start,
+        textAlign: textAlign,
         style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 55,
             ),
       ),
     );
 
-    return Center(
-      child: Material(
-        elevation: 30,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(150)),
-        shadowColor: Colors.black.withValues(alpha: 0.3),
-        color: Colors.transparent,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: (MediaQuery.sizeOf(context).height * 0.275).clamp(0, maxSize),
-            maxWidth: MediaQuery.sizeOf(context).width.clamp(0, maxSize),
-          ),
-          child: Stack(
-            children: [
-              logo != null
-                  ? FladderImage(
-                      image: logo,
-                      disableBlur: true,
-                      alignment: alignment,
-                      imageErrorBuilder: (context, object, stack) => textWidget,
-                      placeHolder: const SizedBox(height: 0),
-                      fit: BoxFit.contain,
-                    )
-                  : textWidget,
-              if (onTap != null)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: onTap,
-                  ),
-                ),
-            ],
-          ),
-        ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: (MediaQuery.sizeOf(context).height * 0.275).clamp(0, maxSize),
+        maxWidth: MediaQuery.sizeOf(context).width.clamp(0, maxSize),
+      ),
+      child: Stack(
+        children: [
+          logo != null
+              ? FladderImage(
+                  image: logo,
+                  disableBlur: true,
+                  alignment: alignment,
+                  imageErrorBuilder: (context, object, stack) => textWidget,
+                  placeHolder: const SizedBox(height: 0),
+                  fit: BoxFit.contain,
+                )
+              : textWidget,
+          if (onTap != null)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: onTap,
+              ),
+            ),
+        ],
       ),
     );
   }

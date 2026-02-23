@@ -19,19 +19,28 @@ mixin _$AccountModel implements DiagnosticableTreeMixin {
   String get avatar;
   DateTime get lastUsed;
   Authentication get authMethod;
+  bool get askForAuthOnLaunch;
   String get localPin;
   @CredentialsConverter()
   CredentialsModel get credentials;
+  SeerrCredentialsModel? get seerrCredentials;
   List<String> get latestItemsExcludes;
   List<String> get searchQueryHistory;
   bool get quickConnectState;
   List<LibraryFiltersModel> get libraryFilters;
+  bool get updateNotificationsEnabled;
+  bool get seerrRequestsEnabled;
+  bool get includeHiddenViews; //Server values not stored in the database
   @JsonKey(includeFromJson: false, includeToJson: false)
   UserPolicy? get policy;
   @JsonKey(includeFromJson: false, includeToJson: false)
   ServerConfiguration? get serverConfiguration;
   @JsonKey(includeFromJson: false, includeToJson: false)
   UserConfiguration? get userConfiguration;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  bool? get hasPassword;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  bool? get hasConfiguredPassword;
   UserSettings? get userSettings;
 
   /// Create a copy of AccountModel
@@ -54,21 +63,29 @@ mixin _$AccountModel implements DiagnosticableTreeMixin {
       ..add(DiagnosticsProperty('avatar', avatar))
       ..add(DiagnosticsProperty('lastUsed', lastUsed))
       ..add(DiagnosticsProperty('authMethod', authMethod))
+      ..add(DiagnosticsProperty('askForAuthOnLaunch', askForAuthOnLaunch))
       ..add(DiagnosticsProperty('localPin', localPin))
       ..add(DiagnosticsProperty('credentials', credentials))
+      ..add(DiagnosticsProperty('seerrCredentials', seerrCredentials))
       ..add(DiagnosticsProperty('latestItemsExcludes', latestItemsExcludes))
       ..add(DiagnosticsProperty('searchQueryHistory', searchQueryHistory))
       ..add(DiagnosticsProperty('quickConnectState', quickConnectState))
       ..add(DiagnosticsProperty('libraryFilters', libraryFilters))
+      ..add(DiagnosticsProperty(
+          'updateNotificationsEnabled', updateNotificationsEnabled))
+      ..add(DiagnosticsProperty('seerrRequestsEnabled', seerrRequestsEnabled))
+      ..add(DiagnosticsProperty('includeHiddenViews', includeHiddenViews))
       ..add(DiagnosticsProperty('policy', policy))
       ..add(DiagnosticsProperty('serverConfiguration', serverConfiguration))
       ..add(DiagnosticsProperty('userConfiguration', userConfiguration))
+      ..add(DiagnosticsProperty('hasPassword', hasPassword))
+      ..add(DiagnosticsProperty('hasConfiguredPassword', hasConfiguredPassword))
       ..add(DiagnosticsProperty('userSettings', userSettings));
   }
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'AccountModel(name: $name, id: $id, avatar: $avatar, lastUsed: $lastUsed, authMethod: $authMethod, localPin: $localPin, credentials: $credentials, latestItemsExcludes: $latestItemsExcludes, searchQueryHistory: $searchQueryHistory, quickConnectState: $quickConnectState, libraryFilters: $libraryFilters, policy: $policy, serverConfiguration: $serverConfiguration, userConfiguration: $userConfiguration, userSettings: $userSettings)';
+    return 'AccountModel(name: $name, id: $id, avatar: $avatar, lastUsed: $lastUsed, authMethod: $authMethod, askForAuthOnLaunch: $askForAuthOnLaunch, localPin: $localPin, credentials: $credentials, seerrCredentials: $seerrCredentials, latestItemsExcludes: $latestItemsExcludes, searchQueryHistory: $searchQueryHistory, quickConnectState: $quickConnectState, libraryFilters: $libraryFilters, updateNotificationsEnabled: $updateNotificationsEnabled, seerrRequestsEnabled: $seerrRequestsEnabled, includeHiddenViews: $includeHiddenViews, policy: $policy, serverConfiguration: $serverConfiguration, userConfiguration: $userConfiguration, hasPassword: $hasPassword, hasConfiguredPassword: $hasConfiguredPassword, userSettings: $userSettings)';
   }
 }
 
@@ -84,20 +101,29 @@ abstract mixin class $AccountModelCopyWith<$Res> {
       String avatar,
       DateTime lastUsed,
       Authentication authMethod,
+      bool askForAuthOnLaunch,
       String localPin,
       @CredentialsConverter() CredentialsModel credentials,
+      SeerrCredentialsModel? seerrCredentials,
       List<String> latestItemsExcludes,
       List<String> searchQueryHistory,
       bool quickConnectState,
       List<LibraryFiltersModel> libraryFilters,
+      bool updateNotificationsEnabled,
+      bool seerrRequestsEnabled,
+      bool includeHiddenViews,
       @JsonKey(includeFromJson: false, includeToJson: false) UserPolicy? policy,
       @JsonKey(includeFromJson: false, includeToJson: false)
       ServerConfiguration? serverConfiguration,
       @JsonKey(includeFromJson: false, includeToJson: false)
       UserConfiguration? userConfiguration,
+      @JsonKey(includeFromJson: false, includeToJson: false) bool? hasPassword,
+      @JsonKey(includeFromJson: false, includeToJson: false)
+      bool? hasConfiguredPassword,
       UserSettings? userSettings});
 
   $CredentialsModelCopyWith<$Res> get credentials;
+  $SeerrCredentialsModelCopyWith<$Res>? get seerrCredentials;
   $UserSettingsCopyWith<$Res>? get userSettings;
 }
 
@@ -118,15 +144,22 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
     Object? avatar = null,
     Object? lastUsed = null,
     Object? authMethod = null,
+    Object? askForAuthOnLaunch = null,
     Object? localPin = null,
     Object? credentials = null,
+    Object? seerrCredentials = freezed,
     Object? latestItemsExcludes = null,
     Object? searchQueryHistory = null,
     Object? quickConnectState = null,
     Object? libraryFilters = null,
+    Object? updateNotificationsEnabled = null,
+    Object? seerrRequestsEnabled = null,
+    Object? includeHiddenViews = null,
     Object? policy = freezed,
     Object? serverConfiguration = freezed,
     Object? userConfiguration = freezed,
+    Object? hasPassword = freezed,
+    Object? hasConfiguredPassword = freezed,
     Object? userSettings = freezed,
   }) {
     return _then(_self.copyWith(
@@ -150,6 +183,10 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
           ? _self.authMethod
           : authMethod // ignore: cast_nullable_to_non_nullable
               as Authentication,
+      askForAuthOnLaunch: null == askForAuthOnLaunch
+          ? _self.askForAuthOnLaunch
+          : askForAuthOnLaunch // ignore: cast_nullable_to_non_nullable
+              as bool,
       localPin: null == localPin
           ? _self.localPin
           : localPin // ignore: cast_nullable_to_non_nullable
@@ -158,6 +195,10 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
           ? _self.credentials
           : credentials // ignore: cast_nullable_to_non_nullable
               as CredentialsModel,
+      seerrCredentials: freezed == seerrCredentials
+          ? _self.seerrCredentials
+          : seerrCredentials // ignore: cast_nullable_to_non_nullable
+              as SeerrCredentialsModel?,
       latestItemsExcludes: null == latestItemsExcludes
           ? _self.latestItemsExcludes
           : latestItemsExcludes // ignore: cast_nullable_to_non_nullable
@@ -174,6 +215,18 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
           ? _self.libraryFilters
           : libraryFilters // ignore: cast_nullable_to_non_nullable
               as List<LibraryFiltersModel>,
+      updateNotificationsEnabled: null == updateNotificationsEnabled
+          ? _self.updateNotificationsEnabled
+          : updateNotificationsEnabled // ignore: cast_nullable_to_non_nullable
+              as bool,
+      seerrRequestsEnabled: null == seerrRequestsEnabled
+          ? _self.seerrRequestsEnabled
+          : seerrRequestsEnabled // ignore: cast_nullable_to_non_nullable
+              as bool,
+      includeHiddenViews: null == includeHiddenViews
+          ? _self.includeHiddenViews
+          : includeHiddenViews // ignore: cast_nullable_to_non_nullable
+              as bool,
       policy: freezed == policy
           ? _self.policy
           : policy // ignore: cast_nullable_to_non_nullable
@@ -186,6 +239,14 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
           ? _self.userConfiguration
           : userConfiguration // ignore: cast_nullable_to_non_nullable
               as UserConfiguration?,
+      hasPassword: freezed == hasPassword
+          ? _self.hasPassword
+          : hasPassword // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      hasConfiguredPassword: freezed == hasConfiguredPassword
+          ? _self.hasConfiguredPassword
+          : hasConfiguredPassword // ignore: cast_nullable_to_non_nullable
+              as bool?,
       userSettings: freezed == userSettings
           ? _self.userSettings
           : userSettings // ignore: cast_nullable_to_non_nullable
@@ -200,6 +261,21 @@ class _$AccountModelCopyWithImpl<$Res> implements $AccountModelCopyWith<$Res> {
   $CredentialsModelCopyWith<$Res> get credentials {
     return $CredentialsModelCopyWith<$Res>(_self.credentials, (value) {
       return _then(_self.copyWith(credentials: value));
+    });
+  }
+
+  /// Create a copy of AccountModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $SeerrCredentialsModelCopyWith<$Res>? get seerrCredentials {
+    if (_self.seerrCredentials == null) {
+      return null;
+    }
+
+    return $SeerrCredentialsModelCopyWith<$Res>(_self.seerrCredentials!,
+        (value) {
+      return _then(_self.copyWith(seerrCredentials: value));
     });
   }
 
@@ -317,18 +393,27 @@ extension AccountModelPatterns on AccountModel {
             String avatar,
             DateTime lastUsed,
             Authentication authMethod,
+            bool askForAuthOnLaunch,
             String localPin,
             @CredentialsConverter() CredentialsModel credentials,
+            SeerrCredentialsModel? seerrCredentials,
             List<String> latestItemsExcludes,
             List<String> searchQueryHistory,
             bool quickConnectState,
             List<LibraryFiltersModel> libraryFilters,
+            bool updateNotificationsEnabled,
+            bool seerrRequestsEnabled,
+            bool includeHiddenViews,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserPolicy? policy,
             @JsonKey(includeFromJson: false, includeToJson: false)
             ServerConfiguration? serverConfiguration,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserConfiguration? userConfiguration,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasPassword,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasConfiguredPassword,
             UserSettings? userSettings)?
         $default, {
     required TResult orElse(),
@@ -342,15 +427,22 @@ extension AccountModelPatterns on AccountModel {
             _that.avatar,
             _that.lastUsed,
             _that.authMethod,
+            _that.askForAuthOnLaunch,
             _that.localPin,
             _that.credentials,
+            _that.seerrCredentials,
             _that.latestItemsExcludes,
             _that.searchQueryHistory,
             _that.quickConnectState,
             _that.libraryFilters,
+            _that.updateNotificationsEnabled,
+            _that.seerrRequestsEnabled,
+            _that.includeHiddenViews,
             _that.policy,
             _that.serverConfiguration,
             _that.userConfiguration,
+            _that.hasPassword,
+            _that.hasConfiguredPassword,
             _that.userSettings);
       case _:
         return orElse();
@@ -378,18 +470,27 @@ extension AccountModelPatterns on AccountModel {
             String avatar,
             DateTime lastUsed,
             Authentication authMethod,
+            bool askForAuthOnLaunch,
             String localPin,
             @CredentialsConverter() CredentialsModel credentials,
+            SeerrCredentialsModel? seerrCredentials,
             List<String> latestItemsExcludes,
             List<String> searchQueryHistory,
             bool quickConnectState,
             List<LibraryFiltersModel> libraryFilters,
+            bool updateNotificationsEnabled,
+            bool seerrRequestsEnabled,
+            bool includeHiddenViews,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserPolicy? policy,
             @JsonKey(includeFromJson: false, includeToJson: false)
             ServerConfiguration? serverConfiguration,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserConfiguration? userConfiguration,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasPassword,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasConfiguredPassword,
             UserSettings? userSettings)
         $default,
   ) {
@@ -402,15 +503,22 @@ extension AccountModelPatterns on AccountModel {
             _that.avatar,
             _that.lastUsed,
             _that.authMethod,
+            _that.askForAuthOnLaunch,
             _that.localPin,
             _that.credentials,
+            _that.seerrCredentials,
             _that.latestItemsExcludes,
             _that.searchQueryHistory,
             _that.quickConnectState,
             _that.libraryFilters,
+            _that.updateNotificationsEnabled,
+            _that.seerrRequestsEnabled,
+            _that.includeHiddenViews,
             _that.policy,
             _that.serverConfiguration,
             _that.userConfiguration,
+            _that.hasPassword,
+            _that.hasConfiguredPassword,
             _that.userSettings);
       case _:
         throw StateError('Unexpected subclass');
@@ -437,18 +545,27 @@ extension AccountModelPatterns on AccountModel {
             String avatar,
             DateTime lastUsed,
             Authentication authMethod,
+            bool askForAuthOnLaunch,
             String localPin,
             @CredentialsConverter() CredentialsModel credentials,
+            SeerrCredentialsModel? seerrCredentials,
             List<String> latestItemsExcludes,
             List<String> searchQueryHistory,
             bool quickConnectState,
             List<LibraryFiltersModel> libraryFilters,
+            bool updateNotificationsEnabled,
+            bool seerrRequestsEnabled,
+            bool includeHiddenViews,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserPolicy? policy,
             @JsonKey(includeFromJson: false, includeToJson: false)
             ServerConfiguration? serverConfiguration,
             @JsonKey(includeFromJson: false, includeToJson: false)
             UserConfiguration? userConfiguration,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasPassword,
+            @JsonKey(includeFromJson: false, includeToJson: false)
+            bool? hasConfiguredPassword,
             UserSettings? userSettings)?
         $default,
   ) {
@@ -461,15 +578,22 @@ extension AccountModelPatterns on AccountModel {
             _that.avatar,
             _that.lastUsed,
             _that.authMethod,
+            _that.askForAuthOnLaunch,
             _that.localPin,
             _that.credentials,
+            _that.seerrCredentials,
             _that.latestItemsExcludes,
             _that.searchQueryHistory,
             _that.quickConnectState,
             _that.libraryFilters,
+            _that.updateNotificationsEnabled,
+            _that.seerrRequestsEnabled,
+            _that.includeHiddenViews,
             _that.policy,
             _that.serverConfiguration,
             _that.userConfiguration,
+            _that.hasPassword,
+            _that.hasConfiguredPassword,
             _that.userSettings);
       case _:
         return null;
@@ -486,17 +610,25 @@ class _AccountModel extends AccountModel with DiagnosticableTreeMixin {
       required this.avatar,
       required this.lastUsed,
       this.authMethod = Authentication.autoLogin,
+      this.askForAuthOnLaunch = false,
       this.localPin = "",
       @CredentialsConverter() required this.credentials,
+      this.seerrCredentials,
       final List<String> latestItemsExcludes = const [],
       final List<String> searchQueryHistory = const [],
       this.quickConnectState = false,
       final List<LibraryFiltersModel> libraryFilters = const [],
+      this.updateNotificationsEnabled = false,
+      this.seerrRequestsEnabled = false,
+      this.includeHiddenViews = false,
       @JsonKey(includeFromJson: false, includeToJson: false) this.policy,
       @JsonKey(includeFromJson: false, includeToJson: false)
       this.serverConfiguration,
       @JsonKey(includeFromJson: false, includeToJson: false)
       this.userConfiguration,
+      @JsonKey(includeFromJson: false, includeToJson: false) this.hasPassword,
+      @JsonKey(includeFromJson: false, includeToJson: false)
+      this.hasConfiguredPassword,
       this.userSettings})
       : _latestItemsExcludes = latestItemsExcludes,
         _searchQueryHistory = searchQueryHistory,
@@ -518,10 +650,15 @@ class _AccountModel extends AccountModel with DiagnosticableTreeMixin {
   final Authentication authMethod;
   @override
   @JsonKey()
+  final bool askForAuthOnLaunch;
+  @override
+  @JsonKey()
   final String localPin;
   @override
   @CredentialsConverter()
   final CredentialsModel credentials;
+  @override
+  final SeerrCredentialsModel? seerrCredentials;
   final List<String> _latestItemsExcludes;
   @override
   @JsonKey()
@@ -555,6 +692,16 @@ class _AccountModel extends AccountModel with DiagnosticableTreeMixin {
   }
 
   @override
+  @JsonKey()
+  final bool updateNotificationsEnabled;
+  @override
+  @JsonKey()
+  final bool seerrRequestsEnabled;
+  @override
+  @JsonKey()
+  final bool includeHiddenViews;
+//Server values not stored in the database
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final UserPolicy? policy;
   @override
@@ -563,6 +710,12 @@ class _AccountModel extends AccountModel with DiagnosticableTreeMixin {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final UserConfiguration? userConfiguration;
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool? hasPassword;
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool? hasConfiguredPassword;
   @override
   final UserSettings? userSettings;
 
@@ -590,21 +743,29 @@ class _AccountModel extends AccountModel with DiagnosticableTreeMixin {
       ..add(DiagnosticsProperty('avatar', avatar))
       ..add(DiagnosticsProperty('lastUsed', lastUsed))
       ..add(DiagnosticsProperty('authMethod', authMethod))
+      ..add(DiagnosticsProperty('askForAuthOnLaunch', askForAuthOnLaunch))
       ..add(DiagnosticsProperty('localPin', localPin))
       ..add(DiagnosticsProperty('credentials', credentials))
+      ..add(DiagnosticsProperty('seerrCredentials', seerrCredentials))
       ..add(DiagnosticsProperty('latestItemsExcludes', latestItemsExcludes))
       ..add(DiagnosticsProperty('searchQueryHistory', searchQueryHistory))
       ..add(DiagnosticsProperty('quickConnectState', quickConnectState))
       ..add(DiagnosticsProperty('libraryFilters', libraryFilters))
+      ..add(DiagnosticsProperty(
+          'updateNotificationsEnabled', updateNotificationsEnabled))
+      ..add(DiagnosticsProperty('seerrRequestsEnabled', seerrRequestsEnabled))
+      ..add(DiagnosticsProperty('includeHiddenViews', includeHiddenViews))
       ..add(DiagnosticsProperty('policy', policy))
       ..add(DiagnosticsProperty('serverConfiguration', serverConfiguration))
       ..add(DiagnosticsProperty('userConfiguration', userConfiguration))
+      ..add(DiagnosticsProperty('hasPassword', hasPassword))
+      ..add(DiagnosticsProperty('hasConfiguredPassword', hasConfiguredPassword))
       ..add(DiagnosticsProperty('userSettings', userSettings));
   }
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'AccountModel(name: $name, id: $id, avatar: $avatar, lastUsed: $lastUsed, authMethod: $authMethod, localPin: $localPin, credentials: $credentials, latestItemsExcludes: $latestItemsExcludes, searchQueryHistory: $searchQueryHistory, quickConnectState: $quickConnectState, libraryFilters: $libraryFilters, policy: $policy, serverConfiguration: $serverConfiguration, userConfiguration: $userConfiguration, userSettings: $userSettings)';
+    return 'AccountModel(name: $name, id: $id, avatar: $avatar, lastUsed: $lastUsed, authMethod: $authMethod, askForAuthOnLaunch: $askForAuthOnLaunch, localPin: $localPin, credentials: $credentials, seerrCredentials: $seerrCredentials, latestItemsExcludes: $latestItemsExcludes, searchQueryHistory: $searchQueryHistory, quickConnectState: $quickConnectState, libraryFilters: $libraryFilters, updateNotificationsEnabled: $updateNotificationsEnabled, seerrRequestsEnabled: $seerrRequestsEnabled, includeHiddenViews: $includeHiddenViews, policy: $policy, serverConfiguration: $serverConfiguration, userConfiguration: $userConfiguration, hasPassword: $hasPassword, hasConfiguredPassword: $hasConfiguredPassword, userSettings: $userSettings)';
   }
 }
 
@@ -622,21 +783,31 @@ abstract mixin class _$AccountModelCopyWith<$Res>
       String avatar,
       DateTime lastUsed,
       Authentication authMethod,
+      bool askForAuthOnLaunch,
       String localPin,
       @CredentialsConverter() CredentialsModel credentials,
+      SeerrCredentialsModel? seerrCredentials,
       List<String> latestItemsExcludes,
       List<String> searchQueryHistory,
       bool quickConnectState,
       List<LibraryFiltersModel> libraryFilters,
+      bool updateNotificationsEnabled,
+      bool seerrRequestsEnabled,
+      bool includeHiddenViews,
       @JsonKey(includeFromJson: false, includeToJson: false) UserPolicy? policy,
       @JsonKey(includeFromJson: false, includeToJson: false)
       ServerConfiguration? serverConfiguration,
       @JsonKey(includeFromJson: false, includeToJson: false)
       UserConfiguration? userConfiguration,
+      @JsonKey(includeFromJson: false, includeToJson: false) bool? hasPassword,
+      @JsonKey(includeFromJson: false, includeToJson: false)
+      bool? hasConfiguredPassword,
       UserSettings? userSettings});
 
   @override
   $CredentialsModelCopyWith<$Res> get credentials;
+  @override
+  $SeerrCredentialsModelCopyWith<$Res>? get seerrCredentials;
   @override
   $UserSettingsCopyWith<$Res>? get userSettings;
 }
@@ -659,15 +830,22 @@ class __$AccountModelCopyWithImpl<$Res>
     Object? avatar = null,
     Object? lastUsed = null,
     Object? authMethod = null,
+    Object? askForAuthOnLaunch = null,
     Object? localPin = null,
     Object? credentials = null,
+    Object? seerrCredentials = freezed,
     Object? latestItemsExcludes = null,
     Object? searchQueryHistory = null,
     Object? quickConnectState = null,
     Object? libraryFilters = null,
+    Object? updateNotificationsEnabled = null,
+    Object? seerrRequestsEnabled = null,
+    Object? includeHiddenViews = null,
     Object? policy = freezed,
     Object? serverConfiguration = freezed,
     Object? userConfiguration = freezed,
+    Object? hasPassword = freezed,
+    Object? hasConfiguredPassword = freezed,
     Object? userSettings = freezed,
   }) {
     return _then(_AccountModel(
@@ -691,6 +869,10 @@ class __$AccountModelCopyWithImpl<$Res>
           ? _self.authMethod
           : authMethod // ignore: cast_nullable_to_non_nullable
               as Authentication,
+      askForAuthOnLaunch: null == askForAuthOnLaunch
+          ? _self.askForAuthOnLaunch
+          : askForAuthOnLaunch // ignore: cast_nullable_to_non_nullable
+              as bool,
       localPin: null == localPin
           ? _self.localPin
           : localPin // ignore: cast_nullable_to_non_nullable
@@ -699,6 +881,10 @@ class __$AccountModelCopyWithImpl<$Res>
           ? _self.credentials
           : credentials // ignore: cast_nullable_to_non_nullable
               as CredentialsModel,
+      seerrCredentials: freezed == seerrCredentials
+          ? _self.seerrCredentials
+          : seerrCredentials // ignore: cast_nullable_to_non_nullable
+              as SeerrCredentialsModel?,
       latestItemsExcludes: null == latestItemsExcludes
           ? _self._latestItemsExcludes
           : latestItemsExcludes // ignore: cast_nullable_to_non_nullable
@@ -715,6 +901,18 @@ class __$AccountModelCopyWithImpl<$Res>
           ? _self._libraryFilters
           : libraryFilters // ignore: cast_nullable_to_non_nullable
               as List<LibraryFiltersModel>,
+      updateNotificationsEnabled: null == updateNotificationsEnabled
+          ? _self.updateNotificationsEnabled
+          : updateNotificationsEnabled // ignore: cast_nullable_to_non_nullable
+              as bool,
+      seerrRequestsEnabled: null == seerrRequestsEnabled
+          ? _self.seerrRequestsEnabled
+          : seerrRequestsEnabled // ignore: cast_nullable_to_non_nullable
+              as bool,
+      includeHiddenViews: null == includeHiddenViews
+          ? _self.includeHiddenViews
+          : includeHiddenViews // ignore: cast_nullable_to_non_nullable
+              as bool,
       policy: freezed == policy
           ? _self.policy
           : policy // ignore: cast_nullable_to_non_nullable
@@ -727,6 +925,14 @@ class __$AccountModelCopyWithImpl<$Res>
           ? _self.userConfiguration
           : userConfiguration // ignore: cast_nullable_to_non_nullable
               as UserConfiguration?,
+      hasPassword: freezed == hasPassword
+          ? _self.hasPassword
+          : hasPassword // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      hasConfiguredPassword: freezed == hasConfiguredPassword
+          ? _self.hasConfiguredPassword
+          : hasConfiguredPassword // ignore: cast_nullable_to_non_nullable
+              as bool?,
       userSettings: freezed == userSettings
           ? _self.userSettings
           : userSettings // ignore: cast_nullable_to_non_nullable
@@ -741,6 +947,21 @@ class __$AccountModelCopyWithImpl<$Res>
   $CredentialsModelCopyWith<$Res> get credentials {
     return $CredentialsModelCopyWith<$Res>(_self.credentials, (value) {
       return _then(_self.copyWith(credentials: value));
+    });
+  }
+
+  /// Create a copy of AccountModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $SeerrCredentialsModelCopyWith<$Res>? get seerrCredentials {
+    if (_self.seerrCredentials == null) {
+      return null;
+    }
+
+    return $SeerrCredentialsModelCopyWith<$Res>(_self.seerrCredentials!,
+        (value) {
+      return _then(_self.copyWith(seerrCredentials: value));
     });
   }
 

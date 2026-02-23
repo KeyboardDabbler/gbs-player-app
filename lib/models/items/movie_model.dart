@@ -6,6 +6,7 @@ import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:fladder/jellyfin/jellyfin_open_api.swagger.dart' as dto;
+import 'package:fladder/l10n/generated/app_localizations.dart';
 import 'package:fladder/models/item_base_model.dart';
 import 'package:fladder/models/items/chapters_model.dart';
 import 'package:fladder/models/items/images_models.dart';
@@ -13,6 +14,8 @@ import 'package:fladder/models/items/item_shared_models.dart';
 import 'package:fladder/models/items/item_stream_model.dart';
 import 'package:fladder/models/items/media_streams_model.dart';
 import 'package:fladder/models/items/overview_model.dart';
+import 'package:fladder/models/items/special_feature_model.dart';
+import 'package:fladder/models/seerr/seerr_dashboard_model.dart';
 import 'package:fladder/screens/details_screens/movie_detail_screen.dart';
 import 'package:fladder/util/humanize_duration.dart';
 
@@ -26,15 +29,23 @@ class MovieModel extends ItemStreamModel with MovieModelMappable {
   final String sortName;
   final String status;
   final List<ItemBaseModel> related;
+  final List<SpecialFeatureModel> specialFeatures;
+  final List<SeerrDashboardPosterModel> seerrRelated;
+  final List<SeerrDashboardPosterModel> seerrRecommended;
+  final Map<String, dynamic>? providerIds;
   final List<Chapter> chapters;
   const MovieModel({
     required this.originalTitle,
     this.path,
     this.chapters = const [],
+    this.specialFeatures = const [],
     required this.premiereDate,
     required this.sortName,
     required this.status,
     this.related = const [],
+    this.seerrRelated = const [],
+    this.seerrRecommended = const [],
+    this.providerIds,
     required super.name,
     required super.id,
     required super.overview,
@@ -51,7 +62,7 @@ class MovieModel extends ItemStreamModel with MovieModelMappable {
     super.jellyType,
   });
   @override
-  String? detailedName(BuildContext context) => "$name${overview.yearAired != null ? " (${overview.yearAired})" : ""}";
+  String? detailedName(AppLocalizations l10n) => "$name${overview.yearAired != null ? " (${overview.yearAired})" : ""}";
 
   @override
   Widget get detailScreenWidget => MovieDetailScreen(item: this);
@@ -75,14 +86,46 @@ class MovieModel extends ItemStreamModel with MovieModelMappable {
   MediaStreamsModel? get streamModel => mediaStreams;
 
   @override
-  String? label(BuildContext context) {
+  String? label(AppLocalizations l10n) {
     return name;
   }
 
   @override
   bool get syncAble => true;
 
-  factory MovieModel.fromBaseDto(dto.BaseItemDto item, Ref ref) {
+  factory MovieModel.fromBaseDto(dto.BaseItemDto item, Ref? ref) {
+    if (ref == null) {
+      return MovieModel(
+        name: item.name ?? "",
+        id: item.id ?? "",
+        childCount: item.childCount,
+        overview: OverviewModel(
+          summary: item.overview ?? "",
+          yearAired: item.productionYear,
+          productionYear: item.productionYear,
+          dateAdded: item.dateCreated,
+          genres: item.genres ?? [],
+        ),
+        userData: UserData.fromDto(item.userData),
+        parentId: item.parentId,
+        playlistId: item.playlistItemId,
+        sortName: item.sortName ?? "",
+        status: item.status ?? "",
+        originalTitle: item.originalTitle ?? "",
+        images: null,
+        primaryRatio: item.primaryImageAspectRatio,
+        chapters: const [],
+        premiereDate: item.premiereDate ?? DateTime.now(),
+        parentImages: null,
+        canDelete: item.canDelete,
+        canDownload: item.canDownload,
+        mediaStreams: MediaStreamsModel(versionStreams: []),
+        seerrRelated: const [],
+        seerrRecommended: const [],
+        providerIds: item.providerIds,
+      );
+    }
+
     return MovieModel(
       name: item.name ?? "",
       id: item.id ?? "",
@@ -102,6 +145,9 @@ class MovieModel extends ItemStreamModel with MovieModelMappable {
       canDelete: item.canDelete,
       canDownload: item.canDownload,
       mediaStreams: MediaStreamsModel.fromMediaStreamsList(item.mediaSources, ref),
+      seerrRelated: const [],
+      seerrRecommended: const [],
+      providerIds: item.providerIds,
     );
   }
 }

@@ -11,7 +11,8 @@ import 'package:fladder/providers/settings/client_settings_provider.dart';
 import 'package:fladder/providers/sync_provider.dart';
 import 'package:fladder/providers/user_provider.dart';
 import 'package:fladder/routes/auto_router.gr.dart';
-import 'package:fladder/screens/shared/fladder_snackbar.dart';
+import 'package:fladder/screens/shared/fladder_notification_overlay.dart';
+import 'package:fladder/seerr/seerr_models.dart';
 import 'package:fladder/util/input_handler.dart';
 import 'package:fladder/util/localization_helper.dart';
 import 'package:fladder/util/string_extensions.dart';
@@ -24,6 +25,7 @@ enum HomeTabs {
   dashboard,
   library,
   favorites,
+  seerr,
   sync;
 
   const HomeTabs();
@@ -32,6 +34,7 @@ enum HomeTabs {
         HomeTabs.dashboard => IconsaxPlusLinear.home_1,
         HomeTabs.library => IconsaxPlusLinear.book,
         HomeTabs.favorites => IconsaxPlusLinear.heart,
+        HomeTabs.seerr => IconsaxPlusLinear.discover_1,
         HomeTabs.sync => IconsaxPlusLinear.cloud,
       };
 
@@ -39,6 +42,7 @@ enum HomeTabs {
         HomeTabs.dashboard => IconsaxPlusBold.home_1,
         HomeTabs.library => IconsaxPlusBold.book,
         HomeTabs.favorites => IconsaxPlusBold.heart,
+        HomeTabs.seerr => IconsaxPlusBold.discover,
         HomeTabs.sync => IconsaxPlusBold.cloud,
       };
 
@@ -46,6 +50,7 @@ enum HomeTabs {
         HomeTabs.dashboard => context.router.navigate(const DashboardRoute()),
         HomeTabs.library => context.router.navigate(const LibraryRoute()),
         HomeTabs.favorites => context.router.navigate(const FavouritesRoute()),
+        HomeTabs.seerr => context.router.navigate(const SeerrRoute()),
         HomeTabs.sync => context.router.navigate(const SyncedRoute()),
       };
 
@@ -53,6 +58,7 @@ enum HomeTabs {
         HomeTabs.dashboard => context.localized.dashboard,
         HomeTabs.library => context.localized.library(0),
         HomeTabs.favorites => context.localized.favorites,
+        HomeTabs.seerr => 'Seerr',
         HomeTabs.sync => context.localized.sync,
       };
 }
@@ -64,6 +70,9 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final canDownload = ref.watch(showSyncButtonProviderProvider);
+    final seerrAuthenticated = ref.watch(
+      userProvider.select((user) => user?.seerrCredentials?.isConfigured ?? false),
+    );
     final destinations = HomeTabs.values
         .map((e) {
           switch (e) {
@@ -97,6 +106,25 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 action: () => e.navigate(context),
               );
+            case HomeTabs.seerr:
+              if (seerrAuthenticated) {
+                return DestinationModel(
+                  label: context.localized.discover,
+                  icon: Icon(e.icon),
+                  selectedIcon: Icon(e.selectedIcon),
+                  route: const SeerrRoute(),
+                  floatingActionButton: AdaptiveFab(
+                    context: context,
+                    title: context.localized.search,
+                    key: Key(e.name.capitalize()),
+                    onPressed: () => context.router.navigate(SeerrSearchRoute(
+                      mode: SeerrSearchMode.search,
+                    )),
+                    child: const Icon(IconsaxPlusLinear.search_status),
+                  ),
+                  action: () => e.navigate(context),
+                );
+              }
             case HomeTabs.sync:
               if (canDownload && !kIsWeb) {
                 return DestinationModel(
@@ -139,38 +167,43 @@ class HomeScreen extends ConsumerWidget {
         })
         .nonNulls
         .toList();
-    return InputHandler<GlobalHotKeys>(
-      autoFocus: false,
-      keyMapResult: (result) {
-        switch (result) {
-          case GlobalHotKeys.search:
-            context.navigateTo(LibrarySearchRoute());
-            return true;
-          case GlobalHotKeys.exit:
-            Future.microtask(() async {
-              final manager = WindowManager.instance;
-              if (await manager.isClosable()) {
-                manager.close();
-              } else {
-                fladderSnackbar(context, title: context.localized.somethingWentWrong);
-              }
-            });
-            return true;
-        }
-      },
-      keyMap: ref.watch(clientSettingsProvider.select((value) => value.currentShortcuts)),
-      child: HeroControllerScope(
-        controller: HeroController(),
-        child: AutoRouter(
-          builder: (context, child) {
-            return CustomKeyboardWrapper(
-              child: NavigationScaffold(
-                destinations: destinations.nonNulls.toList(),
-                currentRouteName: context.router.current.name,
-                nestedChild: child,
-              ),
-            );
-          },
+    return NotificationManagerInitializer(
+      child: InputHandler<GlobalHotKeys>(
+        autoFocus: false,
+        keyMapResult: (result) {
+          switch (result) {
+            case GlobalHotKeys.toggleSideBar:
+              ref.read(clientSettingsProvider.notifier).toggleSideBar();
+              return true;
+            case GlobalHotKeys.search:
+              context.navigateTo(LibrarySearchRoute());
+              return true;
+            case GlobalHotKeys.exit:
+              Future.microtask(() async {
+                final manager = WindowManager.instance;
+                if (await manager.isClosable()) {
+                  manager.close();
+                } else {
+                  FladderSnack.show(context.localized.somethingWentWrong, context: context);
+                }
+              });
+              return true;
+          }
+        },
+        keyMap: ref.watch(clientSettingsProvider.select((value) => value.currentShortcuts)),
+        child: HeroControllerScope(
+          controller: HeroController(),
+          child: AutoRouter(
+            builder: (context, child) {
+              return CustomKeyboardWrapper(
+                child: NavigationScaffold(
+                  destinations: destinations.nonNulls.toList(),
+                  currentRouteName: context.router.current.name,
+                  nestedChild: child,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

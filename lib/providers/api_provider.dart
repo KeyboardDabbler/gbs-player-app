@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chopper/chopper.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:punycoder/punycoder.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:fladder/jellyfin/jellyfin_open_api.swagger.dart';
@@ -11,7 +12,6 @@ import 'package:fladder/providers/auth_provider.dart';
 import 'package:fladder/providers/connectivity_provider.dart';
 import 'package:fladder/providers/service_provider.dart';
 import 'package:fladder/providers/user_provider.dart';
-
 part 'api_provider.g.dart';
 
 final serverUrlProvider = StateProvider<String?>((ref) {
@@ -48,6 +48,31 @@ class JellyApi extends _$JellyApi {
       );
 }
 
+JellyfinOpenApi createJellyfinApiForAccount(Ref ref, String baseUrl, Map<String, String> headers) {
+  return JellyfinOpenApi.create(
+    interceptors: [
+      _TempJellyRequest(baseUrl: baseUrl, headers: headers),
+      JellyResponse(ref),
+      HttpLoggingInterceptor(level: Level.basic),
+    ],
+  );
+}
+
+class _TempJellyRequest implements Interceptor {
+  _TempJellyRequest({required this.baseUrl, required this.headers});
+
+  final String baseUrl;
+  final Map<String, String> headers;
+
+  @override
+  FutureOr<Response<BodyType>> intercept<BodyType>(Chain<BodyType> chain) async {
+    if (baseUrl.isEmpty) throw const HttpException('No server URL provided for temp request');
+
+    final request = applyHeaders(chain.request.copyWith(baseUri: Uri.parse(baseUrl)), headers);
+    return chain.proceed(request);
+  }
+}
+
 class JellyRequest implements Interceptor {
   JellyRequest(this.ref);
 
@@ -56,11 +81,12 @@ class JellyRequest implements Interceptor {
   @override
   FutureOr<Response<BodyType>> intercept<BodyType>(Chain<BodyType> chain) async {
     final connectivityNotifier = ref.read(connectivityStatusProvider.notifier);
-    final serverUrl = ref.read(serverUrlProvider);
+    String? serverUrl = ref.read(serverUrlProvider);
+
     try {
       if (serverUrl?.isEmpty == true || serverUrl == null) throw const HttpException("Failed to connect");
 
-      //Use current logged in user otherwise use the authprovider
+      //Use current logged in user otherwise use the authProvider
       var loginModel = ref.read(userProvider)?.credentials ?? ref.read(authProvider).serverLoginModel?.tempCredentials;
 
       if (loginModel == null) throw UnimplementedError();
@@ -84,14 +110,111 @@ class JellyRequest implements Interceptor {
 }
 
 String normalizeUrl(String url) {
-  url = url.trim();
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    url = "http://$url";
+  final trimmed = url.trim();
+  if (trimmed.isEmpty) return '';
+
+  final withScheme = (trimmed.startsWith('http://') || trimmed.startsWith('https://')) ? trimmed : 'http://$trimmed';
+  final parsed = Uri.parse(withScheme);
+
+  // Only punycode non-ASCII hostnames. IP addresses are always ASCII, so no special handling needed.
+  final host = parsed.host;
+  final hasNonAscii = host.runes.any((c) => c > 0x7F);
+
+  if (!hasNonAscii) return parsed.toString();
+
+  try {
+    final encodedHost = const PunycodeCodec().encode(host);
+    return parsed.replace(host: encodedHost).toString();
+  } catch (_) {
+    return parsed.toString();
   }
-  if (!url.endsWith("/")) {
-    url = "$url/";
+}
+
+Uri? tryParseServerBaseUri(String? url) {
+  if (url == null) return null;
+  final trimmed = url.trim();
+  if (trimmed.isEmpty) return null;
+
+  final parsed = Uri.tryParse(trimmed);
+  if (parsed == null || parsed.scheme.isEmpty || parsed.host.isEmpty) return null;
+  return parsed;
+}
+
+Uri? serverBaseUri(Ref ref) => tryParseServerBaseUri(ref.read(serverUrlProvider));
+
+Uri? buildServerUriFromBase(
+  String baseUrl, {
+  List<String> pathSegments = const [],
+  String? relativeUrl,
+  Map<String, String?>? queryParameters,
+}) {
+  final base = tryParseServerBaseUri(baseUrl);
+  if (base == null) return null;
+
+  Uri? relative;
+  if (relativeUrl != null && relativeUrl.trim().isNotEmpty) {
+    relative = Uri.tryParse(relativeUrl.trim());
   }
-  return url;
+
+  if (relative?.hasScheme == true && relative?.host.isNotEmpty == true) {
+    return relative;
+  }
+
+  final baseSegments = base.pathSegments.where((s) => s.isNotEmpty).toList(growable: false);
+  final relSegments = (relative?.pathSegments ?? const <String>[]).where((s) => s.isNotEmpty).toList(growable: false);
+  final extraSegments = pathSegments.where((s) => s.isNotEmpty).toList(growable: false);
+
+  final mergedSegments = <String>[...baseSegments, ...relSegments, ...extraSegments];
+
+  final mergedQuery = <String, String>{...?(relative?.queryParameters)};
+  if (queryParameters != null) {
+    for (final entry in queryParameters.entries) {
+      final value = entry.value;
+      if (value == null) continue;
+      mergedQuery[entry.key] = value;
+    }
+  }
+
+  return Uri(
+    scheme: base.scheme,
+    userInfo: base.userInfo,
+    host: base.host,
+    port: base.hasPort ? base.port : null,
+    pathSegments: mergedSegments,
+    queryParameters: mergedQuery.isNotEmpty ? mergedQuery : null,
+    fragment: relative?.hasFragment == true ? relative!.fragment : null,
+  );
+}
+
+Uri? buildServerUri(
+  Ref ref, {
+  List<String> pathSegments = const [],
+  String? relativeUrl,
+  Map<String, String?>? queryParameters,
+}) {
+  final baseUrl = ref.read(serverUrlProvider);
+  if (baseUrl == null || baseUrl.isEmpty) return null;
+  return buildServerUriFromBase(
+    baseUrl,
+    pathSegments: pathSegments,
+    relativeUrl: relativeUrl,
+    queryParameters: queryParameters,
+  );
+}
+
+String buildServerUrl(
+  Ref ref, {
+  List<String> pathSegments = const [],
+  String? relativeUrl,
+  Map<String, String?>? queryParameters,
+}) {
+  return buildServerUri(
+        ref,
+        pathSegments: pathSegments,
+        relativeUrl: relativeUrl,
+        queryParameters: queryParameters,
+      )?.toString() ??
+      '';
 }
 
 class JellyResponse implements Interceptor {

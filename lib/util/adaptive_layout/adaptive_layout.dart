@@ -137,7 +137,8 @@ class _AdaptiveLayoutBuilderState extends ConsumerState<AdaptiveLayoutBuilder> {
   List<LayoutPoints> layoutPoints = [
     LayoutPoints(start: 0, end: 599, type: ViewSize.phone),
     LayoutPoints(start: 600, end: 1919, type: ViewSize.tablet),
-    LayoutPoints(start: 1920, end: 3180, type: ViewSize.desktop),
+    LayoutPoints(start: 1920, end: 2560, type: ViewSize.desktop),
+    LayoutPoints(start: 2561, end: double.infinity, type: ViewSize.television),
   ];
   late ViewSize viewSize = ViewSize.tablet;
   late LayoutMode layoutMode = LayoutMode.single;
@@ -187,6 +188,7 @@ class _AdaptiveLayoutBuilderState extends ConsumerState<AdaptiveLayoutBuilder> {
   Widget build(BuildContext context) {
     final arguments = ref.watch(argumentsStateProvider);
     final htpcMode = arguments.htpcMode;
+    final isAndroidTV = arguments.leanBackMode;
     final acceptedLayouts =
         htpcMode ? {LayoutMode.dual} : ref.watch(homeSettingsProvider.select((value) => value.screenLayouts));
     final acceptedViewSizes =
@@ -205,11 +207,14 @@ class _AdaptiveLayoutBuilderState extends ConsumerState<AdaptiveLayoutBuilder> {
           platform: currentPlatform,
           isDesktop: isDesktop,
           sideBarWidth: 0,
+          topBarHeight: 0,
           controller: scrollControllers,
           posterDefaults: posterDefaults,
         );
 
     final mediaQuery = MediaQuery.of(context);
+
+    final useAdditionalPadding = isDesktop || kIsWeb || isAndroidTV;
 
     return ValueListenableBuilder(
       valueListenable: isKeyboardOpen,
@@ -220,10 +225,12 @@ class _AdaptiveLayoutBuilderState extends ConsumerState<AdaptiveLayoutBuilder> {
           child: (input) => MediaQuery(
             data: mediaQuery.copyWith(
               navigationMode: input == InputDevice.dPad ? NavigationMode.directional : NavigationMode.traditional,
-              padding: (isDesktop || kIsWeb
-                  ? const EdgeInsets.only(top: defaultTitleBarHeight, bottom: 16)
+              padding: (useAdditionalPadding
+                  ? EdgeInsets.only(top: isAndroidTV ? 12 : defaultTitleBarHeight, bottom: 16)
                   : mediaQuery.padding),
-              viewPadding: isDesktop || kIsWeb ? const EdgeInsets.only(top: defaultTitleBarHeight, bottom: 16) : null,
+              viewPadding: useAdditionalPadding
+                  ? EdgeInsets.only(top: isAndroidTV ? 12 : defaultTitleBarHeight, bottom: 16)
+                  : null,
             ),
             child: AdaptiveLayout(
               data: currentLayout.copyWith(
@@ -252,11 +259,4 @@ class _AdaptiveLayoutBuilderState extends ConsumerState<AdaptiveLayoutBuilder> {
       },
     );
   }
-}
-
-double? get topPadding {
-  return switch (defaultTargetPlatform) {
-    TargetPlatform.linux || TargetPlatform.windows || TargetPlatform.macOS => 35,
-    _ => null
-  };
 }

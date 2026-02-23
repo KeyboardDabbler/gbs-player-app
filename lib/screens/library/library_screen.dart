@@ -11,6 +11,7 @@ import 'package:fladder/models/library_filter_model.dart';
 import 'package:fladder/models/recommended_model.dart';
 import 'package:fladder/models/view_model.dart';
 import 'package:fladder/providers/library_screen_provider.dart';
+import 'package:fladder/providers/settings/client_settings_provider.dart';
 import 'package:fladder/routes/auto_router.gr.dart';
 import 'package:fladder/screens/home_screen.dart';
 import 'package:fladder/screens/metadata/refresh_metadata.dart';
@@ -59,6 +60,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
     final viewTypes = libraryScreenState.viewType;
     final genres = libraryScreenState.genres;
     final padding = AdaptiveLayout.adaptivePadding(context);
+
+    final useTVExpandedLayout = ref.watch(clientSettingsProvider.select((value) => value.useTVExpandedLayout));
+
     return NestedScaffold(
       background: BackgroundImage(
         items: [
@@ -80,7 +84,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
             }
           }
         },
-        child: AnimatedOpacity(
+        child: (context) => AnimatedOpacity(
           opacity: refreshing ? 0.75 : 1.0,
           duration: const Duration(milliseconds: 175),
           child: SizedBox.expand(
@@ -166,12 +170,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: PosterRow(
+                            tvMode: useTVExpandedLayout,
                             contentPadding: padding,
                             posters: element.posters,
-                            primaryPosters: element.name is Resume,
+                            primaryPosters: element.name is Continue,
                             label: element.type != null
-                                ? "${element.type?.label(context)} - ${element.name.label(context)}"
-                                : element.name.label(context),
+                                ? "${element.type?.label(context.localized)} - ${element.name.label(context.localized)}"
+                                : element.name.label(context.localized),
                           ),
                         ),
                       );
@@ -183,6 +188,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: PosterRow(
+                        tvMode: useTVExpandedLayout,
                         contentPadding: padding,
                         onLabelClick: () => context.pushRoute(
                           LibrarySearchRoute(
@@ -205,6 +211,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: PosterRow(
+                              tvMode: useTVExpandedLayout,
                               contentPadding: padding,
                               posters: element.posters,
                               onLabelClick: () => context.pushRoute(
@@ -218,8 +225,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                                 ),
                               ),
                               label: element.type != null
-                                  ? "${element.type?.label(context)} - ${element.name.label(context)}"
-                                  : element.name.label(context),
+                                  ? "${element.type?.label(context.localized)} - ${element.name.label(context.localized)}"
+                                  : element.name.label(context.localized),
                             ),
                           ),
                         ),
@@ -242,12 +249,18 @@ class LibraryRow extends ConsumerWidget {
     this.selectedView,
     required this.padding,
     this.onSelected,
+    this.onLongPress,
+    this.viewActions,
+    this.enableImageCache = true,
   });
 
   final List<ViewModel> views;
   final ViewModel? selectedView;
   final EdgeInsets padding;
   final FutureOr Function(ViewModel selected)? onSelected;
+  final FutureOr Function(ViewModel selected)? onLongPress;
+  final List<ItemActionButton> Function(ViewModel item)? viewActions;
+  final bool enableImageCache;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -261,7 +274,7 @@ class LibraryRow extends ConsumerWidget {
       itemBuilder: (context, index) {
         final view = views[index];
         final isSelected = selectedView == view;
-        final List<ItemActionButton> viewActions = [
+        final List<ItemActionButton> combinedViewActions = [
           ItemActionButton(
             label: Text(context.localized.search),
             icon: const Icon(IconsaxPlusLinear.search_normal),
@@ -271,7 +284,8 @@ class LibraryRow extends ConsumerWidget {
             label: Text(context.localized.scanLibrary),
             icon: const Icon(IconsaxPlusLinear.refresh),
             action: () => showRefreshPopup(context, view.id, view.name),
-          )
+          ),
+          ...?viewActions?.call(view),
         ];
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -281,7 +295,9 @@ class LibraryRow extends ConsumerWidget {
             FocusButton(
               key: Key(view.id),
               onTap: isSelected ? null : () => onSelected?.call(view),
-              onLongPress: () => context.pushRoute(LibrarySearchRoute(viewModelId: view.id)),
+              onLongPress: onLongPress != null
+                  ? () => onLongPress?.call(view)
+                  : () => context.pushRoute(LibrarySearchRoute(viewModelId: view.id)),
               onSecondaryTapDown: (details) async {
                 Offset localPosition = details.globalPosition;
                 RelativeRect position =
@@ -289,7 +305,7 @@ class LibraryRow extends ConsumerWidget {
                 await showMenu(
                   context: context,
                   position: position,
-                  items: viewActions.popupMenuItems(useIcons: true),
+                  items: combinedViewActions.popupMenuItems(useIcons: true),
                 );
               },
               child: AnimatedContainer(
@@ -311,6 +327,7 @@ class LibraryRow extends ConsumerWidget {
                     child: FladderImage(
                       image: view.imageData?.primary,
                       fit: BoxFit.cover,
+                      cachedImage: enableImageCache,
                       placeHolder: Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

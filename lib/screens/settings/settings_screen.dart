@@ -16,7 +16,7 @@ import 'package:fladder/screens/settings/settings_list_tile.dart';
 import 'package:fladder/screens/settings/settings_scaffold.dart';
 import 'package:fladder/screens/shared/default_alert_dialog.dart';
 import 'package:fladder/screens/shared/fladder_icon.dart';
-import 'package:fladder/screens/shared/fladder_snackbar.dart';
+import 'package:fladder/screens/shared/fladder_notification_overlay.dart';
 import 'package:fladder/util/adaptive_layout/adaptive_layout.dart';
 import 'package:fladder/util/localization_helper.dart';
 import 'package:fladder/util/theme_extensions.dart';
@@ -108,6 +108,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final hasNewUpdate = ref.watch(hasNewUpdateProvider);
 
+    final isAdmin = ref.watch(userProvider.select((value) => value?.policy?.isAdministrator ?? false));
+
     return Padding(
       padding: EdgeInsets.only(left: AdaptiveLayout.of(context).sideBarWidth),
       child: Container(
@@ -115,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: SettingsScaffold(
           label: context.localized.settings,
           scrollController: scrollController,
-          showBackButtonNested: true,
+          showBackButtonNested: AdaptiveLayout.inputDeviceOf(context) != InputDevice.dPad,
           showUserIcon: true,
           items: [
             if (hasNewUpdate && newRelease != null) ...[
@@ -138,6 +140,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: deviceIcon,
               onTap: () => navigateTo(const ClientSettingsRoute()),
             ),
+            if (isAdmin)
+              SettingsListTile(
+                label: Text(context.localized.controlPanel),
+                subLabel: Text(context.localized.controlPanelDesc),
+                selected: containsRoute(const ControlPanelSelectionRoute()),
+                icon: IconsaxPlusLinear.chart_3,
+                onTap: () => const ControlPanelSelectionRoute().navigate(context),
+              ),
             SettingsListTile(
               label: Text(context.localized.settingsProfileTitle),
               subLabel: Text(context.localized.settingsProfileDesc),
@@ -165,7 +175,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               onTap: () => navigateTo(const AboutSettingsRoute()),
             ),
-            if (ref.watch(argumentsStateProvider.select((value) => value.htpcMode))) ...[
+            const FractionallySizedBox(
+              widthFactor: 0.25,
+              child: Divider(),
+            ),
+            if (quickConnectAvailable)
+              SettingsListTile(
+                label: Text(context.localized.settingsQuickConnectTitle),
+                icon: IconsaxPlusLinear.password_check,
+                onTap: () => openQuickConnectDialog(context),
+              ),
+            if (ref.watch(argumentsStateProvider.select((value) => value.htpcMode)))
               SettingsListTile(
                 label: Text(context.localized.exitFladderTitle),
                 icon: IconsaxPlusLinear.close_square,
@@ -180,7 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         if (await manager.isClosable()) {
                           manager.close();
                         } else {
-                          fladderSnackbar(context, title: context.localized.somethingWentWrong);
+                          FladderSnack.show(context.localized.somethingWentWrong, context: context);
                         }
                       } else {
                         SystemNavigator.pop();
@@ -191,17 +211,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     context.localized.cancel,
                   );
                 },
-              ),
-            ],
-            const FractionallySizedBox(
-              widthFactor: 0.25,
-              child: Divider(),
-            ),
-            if (quickConnectAvailable)
-              SettingsListTile(
-                label: Text(context.localized.settingsQuickConnectTitle),
-                icon: IconsaxPlusLinear.password_check,
-                onTap: () => openQuickConnectDialog(context),
               ),
             SettingsListTile(
               label: Text(context.localized.switchUser),

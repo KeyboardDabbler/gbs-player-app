@@ -13,6 +13,7 @@ import 'package:fladder/util/router_extension.dart';
 class SettingsScaffold extends ConsumerWidget {
   final String label;
   final ScrollController? scrollController;
+  final double itemSpacing;
   final List<Widget> items;
   final List<Widget> bottomActions;
   final bool showUserIcon;
@@ -21,6 +22,7 @@ class SettingsScaffold extends ConsumerWidget {
   const SettingsScaffold({
     required this.label,
     this.scrollController,
+    this.itemSpacing = 0.0,
     required this.items,
     this.bottomActions = const [],
     this.floatingActionButton,
@@ -36,79 +38,83 @@ class SettingsScaffold extends ConsumerWidget {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: floatingActionButton,
-      body: Column(
-        children: [
-          Flexible(
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                if (singleLayout)
-                  SliverAppBar.large(
-                    leading: BackButton(
-                      onPressed: () => backAction(context),
-                    ),
-                    flexibleSpace: FlexibleSpaceBar(
-                      titlePadding: const EdgeInsets.symmetric(horizontal: 16)
-                          .add(EdgeInsets.only(left: padding.left, right: padding.right, bottom: 4)),
-                      title: Row(
-                        children: [
-                          Text(label, style: Theme.of(context).textTheme.headlineLarge),
-                          const Spacer(),
-                          if (showUserIcon)
-                            SizedBox.fromSize(
-                              size: const Size.fromRadius(14),
-                              child: UserIcon(
-                                user: ref.watch(userProvider),
-                                cornerRadius: 200,
-                              ),
-                            )
-                        ],
+      body: Padding(
+        padding: EdgeInsets.only(top: AdaptiveLayout.of(context).topBarHeight),
+        child: Column(
+          children: [
+            Flexible(
+              child: CustomScrollView(
+                controller: scrollController,
+                slivers: [
+                  if (singleLayout)
+                    SliverAppBar.large(
+                      leading: BackButton(
+                        onPressed: () => backAction(context),
                       ),
-                      expandedTitleScale: 1.2,
-                    ),
-                    expandedHeight: 100,
-                    collapsedHeight: 80,
-                    pinned: false,
-                    floating: true,
-                  )
-                else
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: MediaQuery.paddingOf(context).copyWith(bottom: 0),
-                      child: Row(
-                        children: [
-                          if (showBackButtonNested && !ref.read(argumentsStateProvider).htpcMode)
-                            BackButton(
-                              onPressed: () => backAction(context),
-                            )
-                        ],
+                      flexibleSpace: FlexibleSpaceBar(
+                        titlePadding: const EdgeInsets.symmetric(horizontal: 16)
+                            .add(EdgeInsets.only(left: padding.left, right: padding.right, bottom: 4)),
+                        title: Row(
+                          children: [
+                            Text(label, style: Theme.of(context).textTheme.headlineLarge),
+                            const Spacer(),
+                            if (showUserIcon)
+                              SizedBox.fromSize(
+                                size: const Size.fromRadius(14),
+                                child: UserIcon(
+                                  user: ref.watch(userProvider),
+                                  cornerRadius: 200,
+                                ),
+                              )
+                          ],
+                        ),
+                        expandedTitleScale: 1.2,
                       ),
+                      expandedHeight: 100,
+                      collapsedHeight: 80,
+                      pinned: false,
+                      floating: true,
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: MediaQuery.paddingOf(context).copyWith(bottom: 0),
+                        child: Row(
+                          children: [
+                            if (showBackButtonNested && !ref.read(argumentsStateProvider).htpcMode)
+                              BackButton(
+                                onPressed: () => backAction(context),
+                              )
+                          ],
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding:
+                        MediaQuery.paddingOf(context).copyWith(top: 0).add(const EdgeInsets.symmetric(horizontal: 2)),
+                    sliver: SliverList.separated(
+                      itemBuilder: (context, index) => items[index],
+                      separatorBuilder: (context, index) => SizedBox(height: itemSpacing / 2),
+                      itemCount: items.length,
                     ),
                   ),
-                SliverPadding(
-                  padding: MediaQuery.paddingOf(context).copyWith(top: 0),
-                  sliver: SliverList.builder(
-                    itemBuilder: (context, index) => items[index],
-                    itemCount: items.length,
-                  ),
-                ),
-                if (bottomActions.isEmpty)
                   const SliverToBoxAdapter(child: SizedBox(height: kBottomNavigationBarHeight + 40)),
-              ],
-            ),
-          ),
-          if (bottomActions.isNotEmpty) ...{
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32)
-                  .add(EdgeInsets.only(left: padding.left, right: padding.right)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: bottomActions,
+                ],
               ),
             ),
-            const SizedBox(height: kBottomNavigationBarHeight + 40),
-          },
-        ],
+            if (bottomActions.isNotEmpty) ...{
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16)
+                    .add(EdgeInsets.only(left: padding.left, right: padding.right)),
+                child: Row(
+                  spacing: 16,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: bottomActions,
+                ),
+              ),
+            },
+          ],
+        ),
       ),
     );
   }

@@ -28,6 +28,7 @@ import 'package:fladder/util/bitrate_helper.dart';
 import 'package:fladder/util/box_fit_extension.dart';
 import 'package:fladder/util/localization_helper.dart';
 import 'package:fladder/widgets/shared/enum_selection.dart';
+import 'package:fladder/widgets/shared/fladder_slider.dart';
 import 'package:fladder/widgets/shared/item_actions.dart';
 
 @RoutePage()
@@ -53,7 +54,7 @@ class _PlayerSettingsPageState extends ConsumerState<PlayerSettingsPage> {
       items: [
         ...settingsListGroup(
           context,
-          SettingsLabelDivider(label: context.localized.video),
+          SettingsLabelDivider(label: context.localized.video(1)),
           [
             if (!AdaptiveLayout.of(context).isDesktop && !kIsWeb)
               Column(
@@ -177,32 +178,89 @@ class _PlayerSettingsPageState extends ConsumerState<PlayerSettingsPage> {
             if (userSettings != null)
               SettingsListTile(
                 label: Text(context.localized.skipBackLength),
-                trailing: SizedBox(
-                    width: 125,
-                    child: IntInputField(
-                      suffix: context.localized.seconds(10),
-                      controller: TextEditingController(text: userSettings.skipBackDuration.inSeconds.toString()),
-                      onSubmitted: (value) {
-                        if (value != null) {
-                          ref.read(userProvider.notifier).setBackwardSpeed(value);
-                        }
-                      },
-                    )),
+                trailing: IntInputField(
+                  suffix: context.localized.seconds(10),
+                  controller: TextEditingController(text: userSettings.skipBackDuration.inSeconds.toString()),
+                  onSubmitted: (value) {
+                    if (value != null) {
+                      ref.read(userProvider.notifier).setBackwardSpeed(value);
+                    }
+                  },
+                ),
               ),
             SettingsListTile(
               label: Text(context.localized.skipForwardLength),
-              trailing: SizedBox(
-                  width: 125,
-                  child: IntInputField(
-                    suffix: context.localized.seconds(10),
-                    controller: TextEditingController(text: userSettings!.skipForwardDuration.inSeconds.toString()),
-                    onSubmitted: (value) {
-                      if (value != null) {
-                        ref.read(userProvider.notifier).setForwardSpeed(value);
-                      }
-                    },
-                  )),
+              trailing: IntInputField(
+                suffix: context.localized.seconds(10),
+                controller: TextEditingController(text: userSettings!.skipForwardDuration.inSeconds.toString()),
+                onSubmitted: (value) {
+                  if (value != null) {
+                    ref.read(userProvider.notifier).setForwardSpeed(value);
+                  }
+                },
+              ),
             ),
+            SettingsListTile(
+              label: Text(context.localized.enableSpeedBoostTitle),
+              subLabel: Text(context.localized.enableSpeedBoostDesc),
+              onTap: () => provider.setEnableSpeedBoost(!videoSettings.enableSpeedBoost),
+              trailing: Switch(
+                value: videoSettings.enableSpeedBoost,
+                onChanged: (value) => provider.setEnableSpeedBoost(value),
+              ),
+            ),
+            AnimatedFadeSize(
+              child: videoSettings.enableSpeedBoost
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.localized.speedBoostRateTitle,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (context.localized.speedBoostRateDesc.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                context.localized.speedBoostRateDesc,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FladderSlider(
+                                  min: 0.25,
+                                  max: 3.0,
+                                  value: videoSettings.speedBoostRate,
+                                  divisions: 55,
+                                  onChanged: (value) => provider.setSpeedBoostRate(value),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "${videoSettings.speedBoostRate.toStringAsFixed(2)}x",
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  : Container(),
+            ),
+            if (AdaptiveLayout.inputDeviceOf(context) == InputDevice.touch)
+              SettingsListTile(
+                label: Text(context.localized.enableDoubleTapSeekTitle),
+                subLabel: Text(context.localized.enableDoubleTapSeekDesc),
+                onTap: () => provider.setEnableDoubleTapSeek(!videoSettings.enableDoubleTapSeek),
+                trailing: Switch(
+                  value: videoSettings.enableDoubleTapSeek,
+                  onChanged: (value) => provider.setEnableDoubleTapSeek(value),
+                ),
+              ),
             if (AdaptiveLayout.inputDeviceOf(context) != InputDevice.touch)
               ExpansionTile(
                 title: Text(
@@ -238,30 +296,34 @@ class _PlayerSettingsPageState extends ConsumerState<PlayerSettingsPage> {
           ],
         ),
         const SizedBox(height: 12),
-        ...settingsListGroup(context, SettingsLabelDivider(label: context.localized.playbackTrackSelection), [
-          SettingsListTile(
-            label: Text(context.localized.rememberAudioSelections),
-            subLabel: Text(context.localized.rememberAudioSelectionsDesc),
-            onTap: () => ref.read(userProvider.notifier).setRememberAudioSelections(),
-            trailing: Switch(
-              value: ref.watch(userProvider.select(
-                (value) => value?.userConfiguration?.rememberAudioSelections ?? true,
-              )),
-              onChanged: (_) => ref.read(userProvider.notifier).setRememberAudioSelections(),
+        ...settingsListGroup(
+          context,
+          SettingsLabelDivider(label: context.localized.playbackTrackSelection),
+          [
+            SettingsListTile(
+              label: Text(context.localized.rememberAudioSelections),
+              subLabel: Text(context.localized.rememberAudioSelectionsDesc),
+              onTap: () => ref.read(userProvider.notifier).setRememberAudioSelections(),
+              trailing: Switch(
+                value: ref.watch(userProvider.select(
+                  (value) => value?.userConfiguration?.rememberAudioSelections ?? true,
+                )),
+                onChanged: (_) => ref.read(userProvider.notifier).setRememberAudioSelections(),
+              ),
             ),
-          ),
-          SettingsListTile(
-            label: Text(context.localized.rememberSubtitleSelections),
-            subLabel: Text(context.localized.rememberSubtitleSelectionsDesc),
-            onTap: () => ref.read(userProvider.notifier).setRememberSubtitleSelections(),
-            trailing: Switch(
-              value: ref.watch(userProvider.select(
-                (value) => value?.userConfiguration?.rememberSubtitleSelections ?? true,
-              )),
-              onChanged: (_) => ref.read(userProvider.notifier).setRememberSubtitleSelections(),
+            SettingsListTile(
+              label: Text(context.localized.rememberSubtitleSelections),
+              subLabel: Text(context.localized.rememberSubtitleSelectionsDesc),
+              onTap: () => ref.read(userProvider.notifier).setRememberSubtitleSelections(),
+              trailing: Switch(
+                value: ref.watch(userProvider.select(
+                  (value) => value?.userConfiguration?.rememberSubtitleSelections ?? true,
+                )),
+                onChanged: (_) => ref.read(userProvider.notifier).setRememberSubtitleSelections(),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
         ...settingsListGroup(
           context,
@@ -345,17 +407,15 @@ class _PlayerSettingsPageState extends ConsumerState<PlayerSettingsPage> {
                       SettingsListTile(
                         label: Text(context.localized.settingsPlayerBufferSizeTitle),
                         subLabel: Text(context.localized.settingsPlayerBufferSizeDesc),
-                        trailing: SizedBox(
-                            width: 70,
-                            child: IntInputField(
-                              suffix: 'MB',
-                              controller: TextEditingController(text: videoSettings.bufferSize.toString()),
-                              onSubmitted: (value) {
-                                if (value != null) {
-                                  provider.setBufferSize(value);
-                                }
-                              },
-                            )),
+                        trailing: IntInputField(
+                          suffix: 'MB',
+                          controller: TextEditingController(text: videoSettings.bufferSize.toString()),
+                          onSubmitted: (value) {
+                            if (value != null) {
+                              provider.setBufferSize(value);
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -386,6 +446,20 @@ class _PlayerSettingsPageState extends ConsumerState<PlayerSettingsPage> {
                                 .toList(),
                           ),
                         ),
+                      SettingsListTile(
+                        label: Text(context.localized.settingsPlayerCustomSubtitlesTitle),
+                        subLabel: Text(context.localized.settingsPlayerCustomSubtitlesDesc),
+                        onTap: videoSettings.useLibass
+                            ? null
+                            : () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  useSafeArea: false,
+                                  builder: (context) => const SubtitleEditor(),
+                                );
+                              },
+                      ),
                     ],
                   ),
                 PlayerOptions.libMDK => SettingsMessageBox(

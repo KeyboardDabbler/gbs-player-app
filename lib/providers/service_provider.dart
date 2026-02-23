@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'dart:developer';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:chopper/chopper.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart';
 
 import 'package:fladder/fake/fake_jellyfin_open_api.dart';
 import 'package:fladder/jellyfin/enum_models.dart';
@@ -675,6 +676,10 @@ class JellyService {
     return response.body?.items?.map((e) => ItemBaseModel.fromBaseDto(e, ref)).toList() ?? [];
   }
 
+  Future<Response<List<BaseItemDto>>> itemsItemIdSpecialFeaturesGet({required String itemId}) async {
+    return api.itemsItemIdSpecialFeaturesGet(itemId: itemId, userId: account?.id);
+  }
+
   Future<Response<BaseItemDtoQueryResult>> itemsItemIdSimilarGet({
     String? itemId,
     int? limit,
@@ -760,6 +765,50 @@ class JellyService {
     );
   }
 
+  Future<Response<List<AccountModel>>> getAllUsers() {
+    return api.usersGet().then(
+          (response) => response.copyWith(
+            body: response.body?.map(
+              (e) {
+                var imageUrl = ref.read(imageUtilityProvider).getUserImageUrl(e.id ?? "");
+                return AccountModel(
+                  name: e.name ?? "",
+                  credentials: CredentialsModel.createNewCredentials(),
+                  id: e.id ?? "",
+                  avatar: imageUrl,
+                  policy: e.policy,
+                  lastUsed: e.lastActivityDate ?? DateTime.now(),
+                  hasPassword: e.hasPassword ?? false,
+                  hasConfiguredPassword: e.hasConfiguredPassword ?? false,
+                );
+              },
+            ).toList(),
+          ),
+        );
+  }
+
+  Future<List<DeviceInfoDto>?> getAllDevices() async {
+    return (await api.devicesGet(
+      userId: account?.id,
+    ))
+        .body
+        ?.items;
+  }
+
+  Future<List<ParentalRating>?> getParentalRatings() async {
+    return (await api.localizationParentalRatingsGet()).body;
+  }
+
+  Future<Response<UserDto>> createNewUser(CreateUserByName user) => api.usersNewPost(body: user);
+
+  Future<Response<dynamic>> setUserPolicy({required String id, required UserPolicy? policy}) =>
+      api.usersUserIdPolicyPost(
+        userId: id,
+        body: policy,
+      );
+
+  Future<Response<BaseItemDtoQueryResult>> libraryMediaFolders() => api.libraryMediaFoldersGet();
+
   Future<Response<AuthenticationResult>> usersAuthenticateByNamePost({
     required String userName,
     required String password,
@@ -767,8 +816,43 @@ class JellyService {
     return api.usersAuthenticateByNamePost(body: AuthenticateUserByName(username: userName, pw: password));
   }
 
+  Future<void> deleteUser(String userId) => api.usersUserIdDelete(userId: userId);
+
   Future<Response<ServerConfiguration>> systemConfigurationGet() => api.systemConfigurationGet();
   Future<Response<PublicSystemInfo>> systemInfoPublicGet() => api.systemInfoPublicGet();
+  Future<Response<SystemInfo>> systemInfoGet() => api.systemInfoGet();
+
+  Future<void> systemConfigurationPost(ServerConfiguration serverConfig) =>
+      api.systemConfigurationPost(body: serverConfig);
+
+  Future<Response<List<LocalizationOption>>> localizationOptions() => api.localizationOptionsGet();
+
+  Future<void> libraryRefreshPost() => api.libraryRefreshPost();
+
+  Future<void> systemRestartPost() => api.systemRestartPost();
+  Future<void> systemShutdownPost() => api.systemShutdownPost();
+
+  Future<Response<ItemCounts>> systemInfoCounts() => api.itemsCountsGet();
+
+  Future<Response<SystemStorageDto>> getStorage() => api.systemInfoStorageGet();
+
+  Future<Response<List<TaskInfo>>> getActiveTasks() => api.scheduledTasksGet();
+
+  Future<Response<List<SessionInfoDto>>> getActiveSessions({
+    int timeoutSeconds = 960,
+  }) =>
+      api.sessionsGet(
+        activeWithinSeconds: timeoutSeconds,
+      );
+
+  Future<void> stopActiveTask(String taskId) => api.scheduledTasksRunningTaskIdDelete(taskId: taskId);
+  Future<void> startTask(String taskId) => api.scheduledTasksRunningTaskIdPost(taskId: taskId);
+
+  Future<Response<dynamic>> updateTaskTriggers(String taskId, {required List<TaskTriggerInfo> triggers}) =>
+      api.scheduledTasksTaskIdTriggersPost(
+        taskId: taskId,
+        body: triggers,
+      );
 
   Future<Response<UserSettings>> getCustomConfig() async {
     final response = await api.displayPreferencesDisplayPreferencesIdGet(
@@ -819,10 +903,11 @@ class JellyService {
     bool? includeHidden,
   }) =>
       api.userViewsGet(
-          userId: account?.id,
-          includeExternalContent: includeExternalContent,
-          presetViews: presetViews,
-          includeHidden: includeHidden);
+        userId: account?.id,
+        includeExternalContent: includeExternalContent,
+        presetViews: presetViews,
+        includeHidden: includeHidden,
+      );
 
   Future<Response<List<ExternalIdInfo>>> itemsItemIdExternalIdInfosGet({required String? itemId}) =>
       api.itemsItemIdExternalIdInfosGet(itemId: itemId);
@@ -833,6 +918,19 @@ class JellyService {
 
   Future<Response<List<RemoteSearchResult>>> itemsRemoteSearchMoviePost({required MovieInfoRemoteSearchQuery? body}) =>
       api.itemsRemoteSearchMoviePost(body: body);
+
+  Future<Response<List<CultureDto>>> localizationCulturesGet() => api.localizationCulturesGet();
+  Future<Response<List<CountryInfo>>> localizationCountriesGet() => api.localizationCountriesGet();
+  Future<Response<List<VirtualFolderInfo>>> libraryVirtualFoldersGet() => api.libraryVirtualFoldersGet();
+
+  Future<Response<LibraryOptionsResultDto>> librariesAvailableOptionsGet({
+    LibrariesAvailableOptionsGetLibraryContentType? libraryContentType,
+    bool? isNewLibrary,
+  }) =>
+      api.librariesAvailableOptionsGet(
+        libraryContentType: libraryContentType,
+        isNewLibrary: isNewLibrary,
+      );
 
   Future<Response<dynamic>> itemsRemoteSearchApplyItemIdPost({
     required String? itemId,
@@ -856,10 +954,7 @@ class JellyService {
         seriesId: seriesId,
         isMissing: isMissing,
         enableUserData: enableUserData,
-        fields: [
-          ...?fields,
-          ItemFields.parentid,
-        ],
+        fields: fields,
       );
       return response;
     } catch (e) {
@@ -1120,8 +1215,26 @@ class JellyService {
           body: trickPlayModel.copyWith(
               images: sanitizedUrls
                   .map(
-                    (e) => joinAll([server, 'Videos/${item.id}/Trickplay/${trickPlayModel.width}', e]),
+                    (e) {
+                      final parsed = Uri.tryParse(e);
+                      if (parsed == null) return '';
+                      if (parsed.hasScheme && parsed.host.isNotEmpty) return parsed.toString();
+                      return buildServerUrl(
+                        ref,
+                        pathSegments: [
+                          'Videos',
+                          item.id,
+                          'Trickplay',
+                          trickPlayModel.width.toString(),
+                          ...parsed.pathSegments.where((s) => s.isNotEmpty),
+                        ],
+                        queryParameters: parsed.queryParameters.isNotEmpty
+                            ? {for (final entry in parsed.queryParameters.entries) entry.key: entry.value}
+                            : null,
+                      );
+                    },
                   )
+                  .where((e) => e.isNotEmpty)
                   .toList()));
     } catch (e) {
       log(e.toString());
@@ -1173,6 +1286,10 @@ class JellyService {
     return _updateUserConfiguration(updated);
   }
 
+  Future<UserConfiguration?> updateUserConfiguration(UserConfiguration newConfiguration) {
+    return _updateUserConfiguration(newConfiguration);
+  }
+
   Future<Response<QuickConnectResult>> quickConnectInitiate() async {
     return api.quickConnectInitiatePost();
   }
@@ -1187,6 +1304,183 @@ class JellyService {
     return api.usersAuthenticateWithQuickConnectPost(
       body: QuickConnectDto(secret: secret),
     );
+  }
+
+  Future<Response<dynamic>> resetPassword({
+    required String userId,
+  }) {
+    return api.usersPasswordPost(
+      userId: userId,
+      body: const UpdateUserPassword(
+        resetPassword: true,
+      ),
+    );
+  }
+
+  Future<Response<dynamic>> setNewPassword({
+    String? userId,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    return api.usersPasswordPost(
+      userId: userId,
+      body: UpdateUserPassword(
+        currentPassword: currentPassword,
+        newPw: newPassword,
+        currentPw: confirmPassword,
+      ),
+    );
+  }
+
+  Future<void> userViewsViewIdDelete({required String viewId}) async {
+    if (kDebugMode) {
+      log("Deleting view with ID: $viewId");
+      return;
+    }
+  }
+
+  Future<Response<DefaultDirectoryBrowserInfoDto>> defaultDirectoryGet() => api.environmentDefaultDirectoryBrowserGet();
+
+  Future<Response<List<FileSystemEntryInfo>>> getDriveLocations() => api.environmentDrivesGet();
+
+  Future<Response<List<FileSystemEntryInfo>>> directoryContentsGet({
+    required String? path,
+    bool? includeFiles,
+    bool? includeDirectories,
+  }) {
+    return api.environmentDirectoryContentsGet(
+      path: path,
+      includeFiles: includeFiles,
+      includeDirectories: includeDirectories,
+    );
+  }
+
+  Future<Response<String>> parentPathGet(
+    String path,
+  ) async {
+    return api.environmentParentPathGet(
+      path: path,
+    );
+  }
+
+  Future<Response<dynamic>> virtualFoldersUpdate({
+    required String id,
+    required LibraryOptions? libraryOptions,
+  }) {
+    return api.libraryVirtualFoldersLibraryOptionsPost(
+      body: UpdateLibraryOptionsDto(
+        id: id,
+        libraryOptions: libraryOptions,
+      ),
+    );
+  }
+
+  Future<Response<dynamic>> virtualFoldersPost({
+    required VirtualFolderInfo newFolder,
+    bool? refreshLibrary,
+  }) {
+    return api.libraryVirtualFoldersPost(
+      name: newFolder.name ?? "",
+      collectionType: switch (newFolder.collectionType) {
+        CollectionTypeOptions.movies => LibraryVirtualFoldersPostCollectionType.movies,
+        CollectionTypeOptions.tvshows => LibraryVirtualFoldersPostCollectionType.tvshows,
+        CollectionTypeOptions.music => LibraryVirtualFoldersPostCollectionType.music,
+        CollectionTypeOptions.books => LibraryVirtualFoldersPostCollectionType.books,
+        CollectionTypeOptions.homevideos => LibraryVirtualFoldersPostCollectionType.homevideos,
+        _ => LibraryVirtualFoldersPostCollectionType.mixed,
+      },
+      paths: newFolder.locations,
+      refreshLibrary: refreshLibrary,
+      body: AddVirtualFolderDto(
+        libraryOptions: newFolder.libraryOptions,
+      ),
+    );
+  }
+
+  Future<Response<BaseItemDtoQueryResult>> liveTvChannelsGet({
+    int? limit,
+  }) async {
+    return await api.liveTvChannelsGet(
+      limit: limit,
+      userId: account?.id,
+      addCurrentProgram: true,
+    );
+  }
+
+  Future<Response<BaseItemDtoQueryResult>> liveTvChannelPrograms({
+    required List<String> channelIds,
+    DateTime? minStartDate,
+    DateTime? maxStartDate,
+    DateTime? minEndDate,
+    DateTime? maxEndDate,
+  }) async {
+    return await api.liveTvProgramsGet(
+      channelIds: channelIds,
+      userId: account?.id,
+      minStartDate: minStartDate,
+      maxStartDate: maxStartDate,
+      minEndDate: minEndDate,
+      maxEndDate: maxEndDate,
+      enableUserData: false,
+      sortBy: [ItemSortBy.startdate],
+      fields: [
+        ItemFields.overview,
+        ItemFields.parentid,
+      ],
+      enableTotalRecordCount: false,
+    );
+  }
+
+  Future<Response<LiveTvOptions>> getLiveTvConfiguration() async {
+    final response = await api.systemConfigurationKeyGet(key: 'livetv');
+    if (response.body == null) {
+      return Response(response.base, null);
+    }
+    try {
+      final jsonData = jsonDecode(response.body!) as Map<String, dynamic>;
+      final liveTvOptions = LiveTvOptions.fromJsonFactory(jsonData);
+      return Response(response.base, liveTvOptions);
+    } catch (e) {
+      log('Failed to parse LiveTvOptions: $e');
+      return Response(response.base, null);
+    }
+  }
+
+  Future<Response> updateLiveTvConfiguration(LiveTvOptions liveTvOptions) async {
+    return api.systemConfigurationKeyPost(key: 'livetv', body: liveTvOptions);
+  }
+
+  // Tuner Hosts
+  Future<Response<TunerHostInfo>> addTunerHost(TunerHostInfo tunerHost) async {
+    return api.liveTvTunerHostsPost(body: tunerHost);
+  }
+
+  Future<Response> deleteTunerHost(String id) async {
+    return api.liveTvTunerHostsDelete(id: id);
+  }
+
+  Future<Response<List<TunerHostInfo>>> discoverTuners({bool? newDevicesOnly}) async {
+    return api.liveTvTunersDiscoverGet(newDevicesOnly: newDevicesOnly);
+  }
+
+  // Listing Providers
+  Future<Response<ListingsProviderInfo>> addListingProvider(
+    ListingsProviderInfo provider, {
+    String? pw,
+    bool? validateListings,
+    bool? validateLogin,
+  }) async {
+    return api.liveTvListingProvidersPost(
+      body: provider,
+      pw: pw,
+      validateListings: validateListings,
+      validateLogin: validateLogin,
+    );
+  }
+
+  Future<Response> deleteListingProvider(String id) async {
+    return api.liveTvListingProvidersDelete(id: id);
   }
 }
 

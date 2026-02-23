@@ -15,8 +15,13 @@ _AccountModel _$AccountModelFromJson(Map<String, dynamic> json) =>
       authMethod:
           $enumDecodeNullable(_$AuthenticationEnumMap, json['authMethod']) ??
               Authentication.autoLogin,
+      askForAuthOnLaunch: json['askForAuthOnLaunch'] as bool? ?? false,
       localPin: json['localPin'] as String? ?? "",
       credentials: const CredentialsConverter().fromJson(json['credentials']),
+      seerrCredentials: json['seerrCredentials'] == null
+          ? null
+          : SeerrCredentialsModel.fromJson(
+              json['seerrCredentials'] as Map<String, dynamic>),
       latestItemsExcludes: (json['latestItemsExcludes'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -31,6 +36,10 @@ _AccountModel _$AccountModelFromJson(Map<String, dynamic> json) =>
                   LibraryFiltersModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      updateNotificationsEnabled:
+          json['updateNotificationsEnabled'] as bool? ?? false,
+      seerrRequestsEnabled: json['seerrRequestsEnabled'] as bool? ?? false,
+      includeHiddenViews: json['includeHiddenViews'] as bool? ?? false,
       userSettings: json['userSettings'] == null
           ? null
           : UserSettings.fromJson(json['userSettings'] as Map<String, dynamic>),
@@ -43,12 +52,17 @@ Map<String, dynamic> _$AccountModelToJson(_AccountModel instance) =>
       'avatar': instance.avatar,
       'lastUsed': instance.lastUsed.toIso8601String(),
       'authMethod': _$AuthenticationEnumMap[instance.authMethod]!,
+      'askForAuthOnLaunch': instance.askForAuthOnLaunch,
       'localPin': instance.localPin,
       'credentials': const CredentialsConverter().toJson(instance.credentials),
+      'seerrCredentials': instance.seerrCredentials,
       'latestItemsExcludes': instance.latestItemsExcludes,
       'searchQueryHistory': instance.searchQueryHistory,
       'quickConnectState': instance.quickConnectState,
       'libraryFilters': instance.libraryFilters,
+      'updateNotificationsEnabled': instance.updateNotificationsEnabled,
+      'seerrRequestsEnabled': instance.seerrRequestsEnabled,
+      'includeHiddenViews': instance.includeHiddenViews,
       'userSettings': instance.userSettings,
     };
 

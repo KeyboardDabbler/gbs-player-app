@@ -15,6 +15,7 @@ import 'package:fladder/widgets/shared/ensure_visible.dart';
 
 class OutlinedTextField extends ConsumerStatefulWidget {
   final String? label;
+  final String? subLabel;
   final FocusNode? focusNode;
   final bool autoFocus;
   final TextEditingController? controller;
@@ -40,6 +41,7 @@ class OutlinedTextField extends ConsumerStatefulWidget {
 
   const OutlinedTextField({
     this.label,
+    this.subLabel,
     this.focusNode,
     this.autoFocus = false,
     this.controller,
@@ -70,7 +72,9 @@ class OutlinedTextField extends ConsumerStatefulWidget {
 }
 
 class _OutlinedTextFieldState extends ConsumerState<OutlinedTextField> {
-  late final controller = widget.controller ?? TextEditingController();
+  late final bool _ownsController = widget.controller == null;
+  late final TextEditingController controller = widget.controller ?? TextEditingController();
+  late final bool _ownsTextFocus = widget.focusNode == null;
   late final FocusNode _textFocus = widget.focusNode ?? FocusNode();
   late final FocusNode _wrapperFocus = FocusNode()
     ..addListener(() {
@@ -90,7 +94,12 @@ class _OutlinedTextFieldState extends ConsumerState<OutlinedTextField> {
 
   @override
   void dispose() {
-    _textFocus.dispose();
+    if (_ownsTextFocus) {
+      _textFocus.dispose();
+    }
+    if (_ownsController) {
+      controller.dispose();
+    }
     _wrapperFocus.dispose();
     super.dispose();
   }
@@ -142,6 +151,7 @@ class _OutlinedTextFieldState extends ConsumerState<OutlinedTextField> {
       onSubmitted: widget.onSubmitted != null
           ? (value) {
               widget.onSubmitted?.call(value);
+              if (AdaptiveLayout.inputDeviceOf(context) != InputDevice.dPad) return;
               Future.microtask(() async {
                 await Future.delayed(const Duration(milliseconds: 125));
                 _wrapperFocus.requestFocus();
@@ -235,6 +245,20 @@ class _OutlinedTextFieldState extends ConsumerState<OutlinedTextField> {
             ),
           ),
         ),
+        if (widget.subLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 6, right: 6),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.subLabel!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ),
         AnimatedFadeSize(
           child: widget.errorText != null
               ? Align(

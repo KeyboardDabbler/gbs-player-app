@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart' as mpv;
@@ -21,12 +23,19 @@ import 'package:fladder/wrappers/players/player_states.dart';
 class LibMPV extends BasePlayer {
   mpv.Player? _player;
   VideoController? _controller;
+  String _currentSubtitleCodec = '';
 
   final StreamController<PlayerState> _stateController = StreamController.broadcast();
   @override
   Stream<PlayerState> get stateStream => _stateController.stream;
 
   StreamSubscription<bool>? _onCompleted;
+
+  RestartableTimer? _retryTimer;
+  DateTime _firstLoadAttempt = DateTime.now();
+  final Duration _maxRetryDuration = const Duration(minutes: 1);
+  final Duration _currentRetryDuration = const Duration(seconds: 5);
+  Completer<void>? _loadCompleter;
 
   @override
   Future<void> init(VideoPlayerSettingsModel settings) async {
@@ -75,6 +84,8 @@ class LibMPV extends BasePlayer {
     _player?.stop();
     _player?.dispose();
     _player = null;
+    _retryTimer?.cancel();
+    _retryTimer = null;
   }
 
   void setState(PlayerState state) {
@@ -84,8 +95,47 @@ class LibMPV extends BasePlayer {
 
   @override
   Future<void> loadVideo(String url, bool play) async {
+    _loadCompleter = Completer<void>();
     await _player?.open(mpv.Media(url), play: play);
+    _firstLoadAttempt = DateTime.now();
+
+    _retryTimer?.cancel();
+    _retryTimer = null;
+
+    _retryTimer = RestartableTimer(
+      _currentRetryDuration,
+      () async {
+        await Future.delayed(const Duration(milliseconds: 150));
+        if (DateTime.now().isAfter(_firstLoadAttempt.add(_maxRetryDuration))) {
+          log("Max retry duration reached, stopping retries.");
+          _retryTimer?.cancel();
+          _retryTimer = null;
+        } else {
+          if (lastState.buffering == false) {
+            _finishedLoading();
+          } else {
+            log("Retrying to load video $url");
+            _player?.open(mpv.Media(url), play: play);
+            _retryTimer?.reset();
+          }
+        }
+      },
+    );
+    _loadCompleter?.future.then(
+      (value) async {
+        await Future.delayed(const Duration(milliseconds: 150));
+        if (play && !lastState.playing) {
+          await _player?.play();
+        }
+      },
+    );
     return setState(lastState.update(buffering: true));
+  }
+
+  void _finishedLoading() {
+    _loadCompleter?.complete();
+    _retryTimer?.cancel();
+    _retryTimer = null;
   }
 
   @override
@@ -138,6 +188,7 @@ class LibMPV extends BasePlayer {
     if (_player == null) return -1;
     final wantedSubtitle = model ?? playbackModel.defaultSubStream;
     if (wantedSubtitle == null) return -1;
+    _currentSubtitleCodec = wantedSubtitle.codec;
     if (wantedSubtitle.index == SubStreamModel.no().index) {
       await _player?.setSubtitleTrack(mpv.SubtitleTrack.no());
     } else {
@@ -188,6 +239,7 @@ class LibMPV extends BasePlayer {
               controller: _controller!,
               showOverlay: showOverlay,
               controlsKey: controlsKey,
+              currentSubtitleCodec: _currentSubtitleCodec,
             )
           : null;
 
@@ -212,11 +264,13 @@ class _VideoSubtitles extends ConsumerStatefulWidget {
   final VideoController controller;
   final bool showOverlay;
   final GlobalKey? controlsKey;
+  final String currentSubtitleCodec;
 
   const _VideoSubtitles({
     required this.controller,
     this.showOverlay = false,
     this.controlsKey,
+    this.currentSubtitleCodec = '',
   });
 
   @override
@@ -267,7 +321,21 @@ class _VideoSubtitlesState extends ConsumerState<_VideoSubtitles> {
 
     final bool isLibassEnabled = widget.controller.player.platform?.configuration.libass ?? false;
 
-    if (isLibassEnabled || text.isEmpty) {
+    if (isLibassEnabled) {
+      // On desktop (Linux/Windows/macOS), mpv burns ALL subtitle formats into the video when libass is enabled.
+      // On mobile (Android/iOS), only ASS/SSA subs are burned in by libass; other formats need the Flutter overlay.
+      final bool isDesktop = defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS;
+      if (isDesktop) {
+        return const SizedBox.shrink();
+      }
+      final currentSubCodec = widget.currentSubtitleCodec.toLowerCase();
+      final bool isAssSubtitle = currentSubCodec.contains('ass') || currentSubCodec.contains('ssa');
+      if (isAssSubtitle || text.isEmpty) {
+        return const SizedBox.shrink();
+      }
+    } else if (text.isEmpty) {
       return const SizedBox.shrink();
     }
 

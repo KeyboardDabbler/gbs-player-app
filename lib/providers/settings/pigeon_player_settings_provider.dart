@@ -21,6 +21,7 @@ final pigeonPlayerSettingsSyncProvider = Provider<void>((ref) {
         (value) => value.themeColor?.color.toARGB32(),
       ),
     );
+
     final value = ref.read(videoPlayerSettingsProvider);
 
     if (!kIsWeb && Platform.isAndroid) {
@@ -47,6 +48,7 @@ final pigeonPlayerSettingsSyncProvider = Provider<void>((ref) {
               switch (value) {
                 SegmentSkip.none => pigeon.SegmentSkip.none,
                 SegmentSkip.askToSkip => pigeon.SegmentSkip.ask,
+                SegmentSkip.skipOnce => pigeon.SegmentSkip.skipOnce,
                 SegmentSkip.skip => pigeon.SegmentSkip.skip,
               },
             ),
